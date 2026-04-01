@@ -5,19 +5,17 @@ WORKDIR /app
 # Install uv
 RUN pip install uv --no-cache-dir
 
-# Copy dependency files first (for Docker layer caching)
-COPY pyproject.toml uv.lock ./
-
-# Install dependencies
-RUN uv sync --frozen --no-cache
+# Install dependencies directly with pip (avoids venv issues)
+RUN uv pip install --system fastapi openai pydantic pyyaml uvicorn jinja2 python-multipart requests
 
 # Copy application code
-COPY . .
+COPY app/ ./app/
+COPY openenv.yaml ./
 
-# Create non-root user for security (HF Spaces requirement)
+# Create non-root user for security
 RUN useradd -m -u 1000 user
 USER user
 
 EXPOSE 7860
 
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
