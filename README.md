@@ -1,3 +1,15 @@
+---
+title: ML Experiment Triage
+emoji: 🧪
+colorFrom: blue
+colorTo: green
+sdk: docker
+sdk_version: "0.0.0"
+python_version: "3.11"
+app_file: Dockerfile
+pinned: false
+---
+
 # ML Experiment Triage Environment
 
 An OpenEnv-compliant RL environment where an AI agent triages ML experiment results — identifying best runs, overfitting models, and suggesting next hyperparameter configs.
@@ -71,7 +83,7 @@ Machine learning practitioners often run dozens or hundreds of experiments with 
 uv sync
 
 # Run the server
-uv run uvicorn app.main:app --reload --port 8000
+uv run uvicorn app.main:app --reload --port 7860
 ```
 
 ### Using Docker
@@ -81,7 +93,7 @@ uv run uvicorn app.main:app --reload --port 8000
 docker build -t ml-experiment-triage .
 
 # Run the container
-docker run -p 8000:8000 ml-experiment-triage
+docker run -p 7860:7860 ml-experiment-triage
 ```
 
 ### With Hugging Face Spaces
@@ -146,7 +158,7 @@ This environment can be deployed to Hugging Face Spaces using the included confi
 
 ```bash
 # Set environment variables
-export API_BASE_URL=http://localhost:8000
+export API_BASE_URL=http://localhost:7860
 export MODEL_NAME=gpt-4o-mini
 export HF_TOKEN=your_token_here
 
