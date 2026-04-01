@@ -1,7 +1,7 @@
 [project]
 name = "ml-experiment-triage-env"
 version = "0.1.0"
-description = "Add your description here"
+description = "An OpenEnv-compliant RL environment for ML experiment triage"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -11,4 +11,7 @@ dependencies = [
     "pydantic>=2.12.5",
     "pyyaml>=6.0.3",
     "uvicorn>=0.42.0",
+    "jinja2>=3.1.0",
+    "python-multipart>=0.0.10",
+    "requests>=2.32.0",
 ]

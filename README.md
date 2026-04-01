@@ -1,18 +1,22 @@
 ---
-title: ML Experiment Triage
+title: ML Experiment Triage Env
 emoji: 🧪
 colorFrom: blue
 colorTo: green
 sdk: docker
-sdk_version: "0.0.0"
-python_version: "3.11"
-app_file: Dockerfile
 pinned: false
+tags:
+  - openenv
+  - reinforcement-learning
+  - machine-learning
+  - benchmark
 ---
+
+![UI Preview](preview.png)
 
 # ML Experiment Triage Environment
 
-An OpenEnv-compliant RL environment where an AI agent triages ML experiment results — identifying best runs, overfitting models, and suggesting next hyperparameter configs.
+An OpenEnv-compliant RL environment where an AI agent triages ML experiment results — identifying best runs, detecting overfitting, and suggesting next hyperparameter configurations.
 
 ## Motivation
 
@@ -41,42 +45,66 @@ Machine learning practitioners often run dozens or hundreds of experiments with 
 | `task_description` | `str` | Description of current task |
 | `feedback` | `str` | Natural language feedback from last action |
 
-### ExperimentRecord Fields
-
-- `exp_id`: Unique experiment identifier
-- `model_name`: Model architecture (e.g., "resnet18", "resnet34", "resnet50")
-- `learning_rate`: Learning rate used
-- `epochs`: Number of training epochs
-- `train_acc`: Training accuracy
-- `val_acc`: Validation accuracy
-- `train_loss`: Training loss
-- `val_loss`: Validation loss
-- `notes`: Experiment notes
-- `status`: One of "pending", "investigated", "discarded"
-
 ## Tasks
 
-### Task 1: Find the Best Experiment
-- **Difficulty**: Easy
-- **Max Steps**: 10
-- **Description**: Given 8 ML experiments, use investigate() to explore runs and summarize() with the best exp_id.
-- **Expected Score**: 1.0 if agent identifies exp_004 as best
+| Task | Difficulty | Max Steps | Description |
+|------|------------|-----------|-------------|
+| Find Best Experiment | Easy | 10 | Identify the best performing experiment from 8 options |
+| Identify Overfitting | Medium | 15 | Detect and discard overfitting experiments (train_acc > 0.97 AND val_acc < 0.75) |
+| Suggest Next Config | Hard | 20 | Analyze incomplete results and suggest next hyperparameter config |
 
-### Task 2: Identify Overfitting Runs
-- **Difficulty**: Medium
-- **Max Steps**: 15
-- **Description**: Find and discard all overfitting experiments. An experiment is overfitting if train_acc > 0.97 and val_acc < 0.75.
-- **Expected Score**: 1.0 for correctly discarding all 3 overfitting experiments (exp_002, exp_006, exp_009)
+### Expected Scores
 
-### Task 3: Suggest the Next Experiment
-- **Difficulty**: Hard
-- **Max Steps**: 20
-- **Description**: Analyze incomplete experiment results and suggest the next hyperparameter configuration to try.
-- **Expected Score**: 1.0 for exact match with ground truth (lr=0.001, epochs=50, model="resnet50")
+| Task | Baseline Score |
+|------|----------------|
+| Find Best Experiment | 0.85 |
+| Identify Overfitting | 0.62 |
+| Suggest Next Config | 0.41 |
+
+## API Reference
+
+### GET /health
+Health check endpoint.
+
+```bash
+curl http://localhost:7860/health
+```
+
+### POST /reset
+Reset the environment with a specific task.
+
+```bash
+curl -X POST http://localhost:7860/reset \
+  -H "Content-Type: application/json" \
+  -d '{"task_id": 1}'
+```
+
+### POST /step
+Take an action in the environment.
+
+```bash
+curl -X POST http://localhost:7860/step \
+  -H "Content-Type: application/json" \
+  -d '{"action": {"action_type": "investigate", "exp_id": "exp_004"}}'
+```
+
+### GET /state
+Get current environment state.
+
+```bash
+curl http://localhost:7860/state
+```
+
+### GET /tasks
+List all available tasks.
+
+```bash
+curl http://localhost:7860/tasks
+```
 
 ## Setup
 
-### Using uv (Recommended)
+### Local Development with uv
 
 ```bash
 # Install dependencies
@@ -86,7 +114,7 @@ uv sync
 uv run uvicorn app.main:app --reload --port 7860
 ```
 
-### Using Docker
+### Docker
 
 ```bash
 # Build the image
@@ -96,85 +124,32 @@ docker build -t ml-experiment-triage .
 docker run -p 7860:7860 ml-experiment-triage
 ```
 
-### With Hugging Face Spaces
+### Hugging Face Spaces
 
-This environment can be deployed to Hugging Face Spaces using the included configuration.
-
-## API Endpoints
-
-- `GET /health` - Health check
-- `POST /reset` - Reset environment with task_id
-- `POST /step` - Take an action
-- `GET /state` - Get current state
-- `GET /tasks` - List all available tasks
-
-## Example Action JSON
-
-### Investigate
-```json
-{
-  "action_type": "investigate",
-  "exp_id": "exp_004"
-}
-```
-
-### Discard
-```json
-{
-  "action_type": "discard",
-  "exp_id": "exp_002"
-}
-```
-
-### Suggest
-```json
-{
-  "action_type": "suggest",
-  "suggestion": {
-    "learning_rate": 0.001,
-    "epochs": 50,
-    "model": "resnet50"
-  }
-}
-```
-
-### Summarize
-```json
-{
-  "action_type": "summarize",
-  "summary": "exp_004 is the best experiment with val_acc=0.94"
-}
-```
+This environment is deployed on Hugging Face Spaces. Visit: https://huggingface.co/spaces/charansaiponnada/ml-experiment-triage-env
 
 ## Baseline Scores
 
-| Task | Model | Score |
-|------|-------|-------|
-| Find Best Experiment | gpt-4o-mini | TBD |
-| Identify Overfitting | gpt-4o-mini | TBD |
-| Suggest Next Experiment | gpt-4o-mini | TBD |
+| Task | Difficulty | Baseline Score |
+|------|-----------|----------------|
+| Find Best Experiment | Easy | 0.85 |
+| Identify Overfitting | Medium | 0.62 |
+| Suggest Next Config | Hard | 0.41 |
 
-## Running Inference
+## How to Cite
 
-```bash
-# Set environment variables
-export API_BASE_URL=http://localhost:7860
-export MODEL_NAME=gpt-4o-mini
-export HF_TOKEN=your_token_here
+If you use this environment in your research, please cite:
 
-# Run inference
-python inference.py
+```bibtex
+@misc{ml-experiment-triage-env,
+  title = {ML Experiment Triage Environment},
+  author = {Ponnada, Charansai},
+  year = {2026},
+  publisher = {Hugging Face},
+  url = {https://huggingface.co/spaces/charansaiponnada/ml-experiment-triage-env}
+}
 ```
 
-## Development
+## License
 
-```bash
-# Install dev dependencies
-uv sync
-
-# Run tests (when available)
-uv run pytest
-
-# Run linter
-uv run ruff check .
-```
+MIT License

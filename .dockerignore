@@ -1,6 +1,14 @@
 .venv
 __pycache__
 *.pyc
+*.pyo
 .git
+.gitignore
 *.md
 .env
+.env.*
+tests/
+*.test.py
+.ruff_cache
+.DS_Store
+*.log

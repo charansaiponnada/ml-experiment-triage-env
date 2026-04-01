@@ -7,21 +7,35 @@ from openai import OpenAI
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
-MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
-HF_TOKEN = os.environ.get("HF_TOKEN", "")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+API_KEY = os.getenv("HF_TOKEN", "")
+ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 
-client = OpenAI(api_key=HF_TOKEN, base_url=API_BASE_URL)
+client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+
+SYSTEM_PROMPT = """You are an ML experiment analysis agent. You will be shown a table 
+of ML experiments. Your job is to analyze them and take actions.
+
+Available actions (respond with ONLY valid JSON, no markdown):
+{"action_type": "investigate", "exp_id": "exp_001"}
+{"action_type": "discard", "exp_id": "exp_001"}  
+{"action_type": "suggest", "suggestion": {"model_name": "resnet50", "learning_rate": 0.001, "epochs": 50}}
+{"action_type": "summarize", "summary": "exp_004"}
+
+Rules:
+- Always investigate at least 2 experiments before summarizing
+- Discard experiments where train_acc > 0.97 AND val_acc < 0.75
+- For suggest: recommend config based on best performing experiments
+- For summarize: provide the exp_id of the best experiment
+- Respond ONLY with JSON. No explanation. No markdown."""
 
 
 def call_api(prompt: str) -> dict:
     response = client.chat.completions.create(
         model=MODEL_NAME,
         messages=[
-            {
-                "role": "system",
-                "content": "You are an AI assistant helping triage ML experiments. Read the experiment table carefully. Return ONLY valid JSON matching the Action schema. Use investigate before summarize. Be systematic.",
-            },
+            {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt},
         ],
         temperature=0.0,
@@ -47,10 +61,13 @@ def format_observation(obs: dict) -> str:
 
 
 def run_task(task_id: int, task_name: str) -> dict:
-    reset_resp = requests.post(f"{API_BASE_URL}/reset", json={"task_id": task_id})
+    reset_resp = requests.post(f"{ENV_BASE_URL}/reset", json={"task_id": task_id})
     obs = reset_resp.json()
 
-    logger.info(f"[START] task={task_name} model={MODEL_NAME}")
+    print(
+        f"[START] task={task_name} env=ml-experiment-triage model={MODEL_NAME}",
+        flush=True,
+    )
 
     total_reward = 0.0
     step_num = 0
@@ -67,7 +84,7 @@ def run_task(task_id: int, task_name: str) -> dict:
             logger.error(f"API call failed: {e}")
             action = {"action_type": "summarize", "summary": "exp_001"}
 
-        step_resp = requests.post(f"{API_BASE_URL}/step", json={"action": action})
+        step_resp = requests.post(f"{ENV_BASE_URL}/step", json={"action": action})
         result = step_resp.json()
 
         obs = result["observation"]
@@ -75,9 +92,11 @@ def run_task(task_id: int, task_name: str) -> dict:
         done = result["done"]
 
         total_reward += reward
+        action_type = action.get("action_type", "unknown")
 
-        logger.info(
-            f"[STEP] step={step_num} action={action.get('action_type')} reward={reward} done={done}"
+        print(
+            f"[STEP] step={step_num} action={action_type} reward={reward:.4f} done={done}",
+            flush=True,
         )
 
         if done:
@@ -89,7 +108,7 @@ def run_task(task_id: int, task_name: str) -> dict:
     score = max(0.0, min(1.0, total_reward))
     success = score >= 0.5
 
-    logger.info(f"[END] success={success} steps={step_num} score={score}")
+    print(f"[END] success={success} steps={step_num} score={score:.4f}", flush=True)
 
     return {"success": success, "steps": step_num, "score": score}
 

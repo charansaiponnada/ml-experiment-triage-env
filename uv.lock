@@ -1247,20 +1247,26 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi" },
+    { name = "jinja2" },
     { name = "openai" },
     { name = "openenv-core" },
     { name = "pydantic" },
+    { name = "python-multipart" },
     { name = "pyyaml" },
+    { name = "requests" },
     { name = "uvicorn" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.135.2" },
+    { name = "jinja2", specifier = ">=3.1.0" },
     { name = "openai", specifier = ">=2.30.0" },
     { name = "openenv-core", specifier = ">=0.2.3" },
     { name = "pydantic", specifier = ">=2.12.5" },
+    { name = "python-multipart", specifier = ">=0.0.10" },
     { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "requests", specifier = ">=2.32.0" },
     { name = "uvicorn", specifier = ">=0.42.0" },
 ]
 
