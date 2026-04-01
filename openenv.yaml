@@ -1,0 +1,20 @@
+name: ml-experiment-triage
+version: "1.0.0"
+description: "An RL environment where an AI agent triages ML experiment results — identifying best runs, overfitting models, and suggesting next hyperparameter configs."
+tags: [openenv, ml, data-science, experiment-management]
+tasks:
+  - id: 1
+    name: find_best_experiment
+    difficulty: easy
+  - id: 2
+    name: identify_overfitting
+    difficulty: medium
+  - id: 3
+    name: suggest_next_experiment
+    difficulty: hard
+action_space:
+  type: discrete
+  actions: [investigate, discard, suggest, summarize]
+observation_space:
+  type: structured
+  fields: [experiments, current_step, max_steps, task_description, feedback]
