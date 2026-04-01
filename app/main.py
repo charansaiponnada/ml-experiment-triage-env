@@ -44,7 +44,9 @@ class TaskDescription(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    html_path = os.path.join(os.path.dirname(__file__), "templates", "index.html")
+    html_path = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "templates", "index.html"
+    )
     with open(html_path, "r", encoding="utf-8") as f:
         return f.read()
 
