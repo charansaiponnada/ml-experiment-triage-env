@@ -1,0 +1,64 @@
+name: ml-experiment-triage
+version: "1.0.0"
+description: >
+  An RL environment where an AI agent triages ML experiment results.
+  Identify best runs, detect overfitting, and suggest next configs.
+  
+  GitHub: https://github.com/charansaiponnada/ml-experiment-triage-env
+tags:
+  - openenv
+  - machine-learning  
+  - data-science
+  - experiment-management
+  - reinforcement-learning
+tasks:
+  - id: 1
+    name: find_best_experiment
+    difficulty: easy
+    max_steps: 10
+    description: "Find the best performing experiment from 8 runs"
+  - id: 2
+    name: identify_overfitting
+    difficulty: medium
+    max_steps: 15
+    description: "Detect and discard all 3 overfitting experiments"
+  - id: 3
+    name: suggest_next_experiment
+    difficulty: hard
+    max_steps: 20
+    description: "Analyze incomplete results, suggest next hyperparameter config"
+action_space:
+  type: discrete
+  actions:
+    - name: investigate
+      description: "Examine an experiment in detail (+0.1 reward)"
+      params: [exp_id]
+    - name: discard
+      description: "Mark experiment as dead end"
+      params: [exp_id]
+    - name: suggest
+      description: "Propose next hyperparameter config"
+      params: [suggestion]
+    - name: summarize
+      description: "Final answer — ends episode"
+      params: [summary]
+observation_space:
+  type: structured
+  fields:
+    - name: experiments
+      type: "List[ExperimentRecord]"
+    - name: current_step
+      type: int
+    - name: max_steps
+      type: int
+    - name: task_description
+      type: str
+    - name: feedback
+      type: str
+reward:
+  range: [0.0, 1.0]
+  type: dense
+  description: >
+    Dense rewards per step: +0.1 investigate, +0.15 correct discard,
+    -0.1 wrong discard, -0.05 invalid action. Final reward 0.0-1.0
+    on summarize.
