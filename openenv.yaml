@@ -1,9 +1,10 @@
-name: ml-experiment-triage
+name: ml-experiment-triage-env
 version: "1.0.0"
 description: >
   An RL environment where an AI agent triages ML experiment results.
-  The agent must identify best runs, detect overfitting, and suggest
-  next hyperparameter configurations.
+  Identify best runs, detect overfitting, and suggest next configs.
+  
+  GitHub: https://github.com/charansaiponnada/ml-experiment-triage-env
 tags:
   - openenv
   - machine-learning
@@ -15,31 +16,31 @@ tasks:
     name: find_best_experiment
     difficulty: easy
     max_steps: 10
-    description: "Find and identify the best performing experiment"
+    description: "Find the best performing experiment from 8 runs"
   - id: 2
     name: identify_overfitting
     difficulty: medium
     max_steps: 15
-    description: "Detect and discard all overfitting experiments"
+    description: "Detect and discard all 3 overfitting experiments"
   - id: 3
     name: suggest_next_experiment
     difficulty: hard
     max_steps: 20
-    description: "Analyze incomplete results and suggest next config"
+    description: "Analyze incomplete results, suggest next hyperparameter config"
 action_space:
   type: discrete
   actions:
     - name: investigate
-      description: "Examine an experiment in detail"
+      description: "Examine an experiment in detail (+0.1 reward)"
       params: [exp_id]
     - name: discard
-      description: "Mark experiment as a dead end"
+      description: "Mark experiment as dead end"
       params: [exp_id]
     - name: suggest
-      description: "Propose next hyperparameter configuration"
+      description: "Propose next hyperparameter config"
       params: [suggestion]
     - name: summarize
-      description: "Give final answer and end episode"
+      description: "Final answer — ends episode"
       params: [summary]
 observation_space:
   type: structured
@@ -54,7 +55,11 @@ observation_space:
       type: str
     - name: feedback
       type: str
+    - name: serialized_state
+      type: dict
 reward:
   range: [0.0, 1.0]
   type: dense
-  description: "Partial rewards per step, final score on summarize"
+  description: >
+    Dense rewards per step: +0.1 investigate, +0.15 correct discard,
+    -0.1 wrong discard, -0.05 invalid action. Final reward 0.0-1.0 on summarize.
