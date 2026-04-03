@@ -122,7 +122,7 @@ def get_task(task_id: int) -> Task:
 
 
 def generate_experiments(task_id: int):
-    from envs.ml_triage_env.models import ExperimentRecord
+    from models import ExperimentRecord, MLTriageObservation, MLTriageState
 
     if task_id == 1:
         return [
@@ -515,7 +515,7 @@ def serialize_experiment(exp) -> Dict:
 
 
 def deserialize_experiments(exp_data: List[Dict]) -> List:
-    from envs.ml_triage_env.models import ExperimentRecord
+    from models import ExperimentRecord, MLTriageObservation, MLTriageState
 
     return [ExperimentRecord(**e) for e in exp_data]
 
@@ -587,7 +587,7 @@ class MLTriageEnvironment(Environment):
             self.done = False
             self.total_reward = 0.0
 
-        from envs.ml_triage_env.models import MLTriageObservation
+        from models import MLTriageObservation, MLTriageState
 
         return MLTriageObservation(
             experiments=self.experiments,
@@ -620,7 +620,7 @@ class MLTriageEnvironment(Environment):
         reward_reason = ""
 
         if self.done:
-            from envs.ml_triage_env.models import MLTriageObservation
+            from models import MLTriageObservation, MLTriageState
 
             return MLTriageObservation(
                 experiments=self.experiments,
@@ -758,7 +758,7 @@ class MLTriageEnvironment(Environment):
         elif self.done:
             self.feedback = f"Episode complete. Final score: {reward_value}"
 
-        from envs.ml_triage_env.models import MLTriageObservation
+        from models import MLTriageObservation, MLTriageState
 
         return MLTriageObservation(
             experiments=self.experiments,
@@ -772,7 +772,7 @@ class MLTriageEnvironment(Environment):
 
     @property
     def state(self):
-        from envs.ml_triage_env.models import MLTriageState
+        from models import MLTriageState
 
         return {
             "episode_id": None,
