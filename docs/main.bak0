@@ -168,31 +168,19 @@ The project follows the official OpenEnv specification:
 
 \subsection{Data Flow}
 
-The ML Experiment Triage environment uses a client-server architecture where the client (inference script) interacts with the server (FastAPI) through HTTP endpoints.
-
 \begin{figure}[h]
 	\centering
-	\begin{tikzpicture}[
-			node distance=1.5cm,
-			block/.style={rectangle, draw, rounded corners, minimum width=2.5cm, minimum height=1cm, align=center},
-			arrow/.style={thick,->,>=stealth}
-		]
-
-		\node[block, fill=blue!20] (client) at (0,0) {Client\\inference.py};
-		\node[block, fill=green!20] (api) at (5,0) {OpenEnv Server\\FastAPI};
-		\node[block, fill=yellow!20] (env) at (10,0) {MLTriage\\Environment};
-
-		\draw[arrow] (client) -- node[above] {HTTP Request} (api);
-		\draw[arrow] (api) -- node[above] {Create New Instance} (env);
-		\draw[arrow] (env) -- node[above] {Response} (api);
-		\draw[arrow] (api) -- node[above] {JSON Response} (client);
-
-		\node[block, fill=purple!20, minimum width=3cm] (llm) at (0,-2.5) {GPT-4o-mini\\LLM};
-
-		\draw[arrow] (client) -- node[right] {Prompts} (llm);
-		\draw[arrow] (llm) -- node[right] {Action JSON} (client);
-
-	\end{tikzpicture}
+	\fbox{
+		\begin{minipage}{0.95\textwidth}
+			\begin{enumerate}
+				\item Client sends request to \texttt{/reset} or \texttt{/step}
+				\item OpenEnv creates new environment instance
+				\item Environment processes action, updates state
+				\item Observation serialized and returned
+				\item Client passes serialized state in next request
+			\end{enumerate}
+		\end{minipage}
+	}
 \end{figure}
 
 The key innovation is \textbf{state serialization} - since HTTP creates a new environment for each request, we serialize the entire game state into the observation and pass it back with each action.
@@ -316,8 +304,6 @@ class MLTriageObservation(Observation):
 
 \subsection{Overall Reward System}
 
-The reward system is designed to provide dense feedback for each action, encouraging the agent to learn effective triage strategies.
-
 \begin{table}[h]
 	\centering
 	\begin{tabular}{@{}lc@{}}
@@ -376,30 +362,6 @@ This pattern ensures each request carries the complete game state.
 
 The environment provides standard OpenEnv endpoints:
 
-\begin{figure}[h]
-	\centering
-	\begin{tikzpicture}[
-			node distance=1cm,
-			endpoint/.style={rectangle, draw, rounded corners, minimum width=2cm, minimum height=0.8cm, align=center},
-			arrow/.style={thick,->,>=stealth}
-		]
-
-		\node[endpoint, fill=blue!20] (health) at (0,0) {\texttt{/health}\\\tiny{GET}};
-		\node[endpoint, fill=green!20] (reset) at (3,0) {\texttt{/reset}\\\tiny{POST}};
-		\node[endpoint, fill=green!20] (step) at (6,0) {\texttt{/step}\\\tiny{POST}};
-		\node[endpoint, fill=purple!20] (state) at (1.5,-1.5) {\texttt{/state}\\\tiny{GET}};
-		\node[endpoint, fill=purple!20] (metadata) at (4.5,-1.5) {\texttt{/metadata}\\\tiny{GET}};
-		\node[endpoint, fill=orange!20] (docs) at (3,-3) {\texttt{/docs}\\\tiny{GET}};
-
-		\draw[arrow] (health) -- (reset);
-		\draw[arrow] (reset) -- (step);
-		\draw[arrow] (step) -- (state);
-		\draw[arrow] (state) -- (metadata);
-		\draw[arrow] (metadata) -- (docs);
-
-	\end{tikzpicture}
-\end{figure}
-
 \begin{table}[h]
 	\centering
 	\begin{tabular}{@{}lll@{}}
@@ -442,29 +404,6 @@ This allows OpenEnv to create fresh instances for each request.
 
 The inference script demonstrates an AI agent playing the game:
 
-\begin{figure}[h]
-	\centering
-	\begin{tikzpicture}[
-			node distance=1.2cm,
-			step/.style={rectangle, draw, rounded corners, minimum width=2.5cm, minimum height=0.8cm, align=center},
-			arrow/.style={thick,->,>=stealth}
-		]
-
-		\node[step, fill=blue!20] (s1) at (0,0) {1. Reset};
-		\node[step, fill=green!20] (s2) at (2,0) {2. Observe};
-		\node[step, fill=yellow!20] (s3) at (4,0) {3. LLM Action};
-		\node[step, fill=orange!20] (s4) at (6,0) {4. Execute};
-		\node[step, fill=red!20] (s5) at (8,0) {5. Reward};
-
-		\draw[arrow] (s1) -- (s2);
-		\draw[arrow] (s2) -- (s3);
-		\draw[arrow] (s3) -- (s4);
-		\draw[arrow] (s4) -- (s5);
-
-	\end{tikzpicture}
-\end{figure}
-
-The workflow:
 \begin{enumerate}
 	\item \textbf{Reset}: Initialize environment with task
 	\item \textbf{Observation}: Format experiments as text
@@ -472,40 +411,6 @@ The workflow:
 	\item \textbf{Step}: Execute action, get reward
 	\item \textbf{Repeat}: Until done or max steps
 \end{enumerate}
-
-\subsection{State Machine}
-
-The environment follows a state machine where actions trigger transitions:
-
-\begin{figure}[h]
-	\centering
-	\begin{tikzpicture}[
-			node distance=1.5cm,
-			state/.style={rectangle, draw, rounded corners, minimum width=1.8cm, align=center},
-			arrow/.style={thick,->,>=stealth},
-			start/.style={circle, draw, fill=green!30, minimum width=0.8cm}
-		]
-
-		\node[start] (start) at (0,0) {};
-		\node[state, fill=blue!20] (reset) at (2,0) {Reset};
-		\node[state, fill=yellow!20] (investigate) at (5,0) {Investigate};
-		\node[state, fill=orange!20] (discard) at (5,-2) {Discard};
-		\node[state, fill=purple!20] (suggest) at (8,-1) {Suggest};
-		\node[state, fill=red!20] (summarize) at (8,-3) {Summarize};
-		\node[state, fill=green!20] (done) at (11,-2) {Done};
-
-		\draw[arrow] (start) -- (reset);
-		\draw[arrow] (reset) -- node[above] {investigate} (investigate);
-		\draw[arrow] (reset) -- node[right] {discard} (discard);
-		\draw[arrow] (investigate) -- node[above] {summarize} (summarize);
-		\draw[arrow] (discard) -- node[above] {summarize} (summarize);
-		\draw[arrow] (suggest) -- (summarize);
-		\draw[arrow] (summarize) -- node[above] {reward} (done);
-
-	\end{tikzpicture}
-\end{figure}
-
-Each action transitions the environment to a new state, accumulating rewards until the episode concludes.
 
 \begin{lstlisting}[language=Python, style=mystyle]
 # Get observation
@@ -531,27 +436,6 @@ The LLM is prompted to respond with valid JSON only, ensuring clean parsing.
 \newpage
 
 \section{Deployment}
-
-The ML Experiment Triage environment can be deployed in multiple ways:
-
-\begin{figure}[h]
-	\centering
-	\begin{tikzpicture}[
-			node distance=1.5cm,
-			box/.style={rectangle, draw, rounded corners, minimum width=2.5cm, minimum height=1.5cm, align=center},
-			cloud/.style={ellipse, draw, dashed, align=center},
-			arrow/.style={thick,->,>=stealth}
-		]
-
-		\node[cloud, fill=blue!10] (hf) at (0,0) {Hugging Face\\Spaces};
-		\node[box, fill=green!20] (docker) at (0,-2) {Docker\\Container};
-		\node[box, fill=yellow!20] (local) at (4,-1) {Local\\Server};
-
-		\draw[arrow] (docker) -- node[left] {Builds from} (hf);
-		\draw[arrow] (local) -- node[above] {uvicorn} (docker);
-
-	\end{tikzpicture}
-\end{figure}
 
 \subsection{Docker}
 
