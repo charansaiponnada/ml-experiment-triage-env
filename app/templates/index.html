@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Experiment Triage Environment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a2235;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-gold: #fbbf24;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border: #2d3748;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 32px;
+        }
+        
+        .header-left h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header-left .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--accent-green);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .social-links a {
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+        
+        .social-links a:hover {
+            color: var(--text-primary);
+        }
+        
+        /* Task Selector */
+        .task-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        
+        .task-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .task-card:hover {
+            border-color: var(--accent-blue);
+            transform: translateY(-2px);
+        }
+        
+        .task-card.selected {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .task-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .task-card .difficulty {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .task-card .difficulty.easy {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+        }
+        
+        .task-card .difficulty.medium {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-yellow);
+        }
+        
+        .task-card .difficulty.hard {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+        
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 24px;
+        }
+        
+        /* Experiment Table */
+        .table-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .table-card h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        .data-table th {
+            text-align: left;
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .data-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .data-table tr:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+        
+        .data-table tr.best {
+            background: rgba(251, 191, 36, 0.15);
+        }
+        
+        .data-table tr.best td:first-child {
+            border-left: 3px solid var(--accent-gold);
+        }
+        
+        .data-table .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .data-table .status-badge.pending {
+            background: rgba(156, 163, 175, 0.2);
+            color: var(--text-secondary);
+        }
+        
+        .data-table .status-badge.investigated {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+        }
+        
+        .data-table .status-badge.discarded {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+        
+        .overfit-warning {
+            color: var(--accent-yellow);
+            font-size: 16px;
+        }
+        
+        /* Action Panel */
+        .action-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .action-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .action-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .action-card select,
+        .action-card input {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .action-card select:focus,
+        .action-card input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        
+        .action-card button {
+            width: 100%;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .action-card button.investigate {
+            background: var(--accent-blue);
+            color: white;
+        }
+        
+        .action-card button.discard {
+            background: var(--accent-red);
+            color: white;
+        }
+        
+        .action-card button.suggest {
+            background: var(--accent-green);
+            color: white;
+        }
+        
+        .action-card button.summarize {
+            background: var(--accent-gold);
+            color: var(--bg-primary);
+        }
+        
+        .action-card button:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+        
+        .action-card button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Reward Tracker */
+        .reward-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .reward-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+        }
+        
+        .total-reward {
+            font-size: 48px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        
+        .total-reward.positive {
+            color: var(--accent-green);
+        }
+        
+        .total-reward.negative {
+            color: var(--accent-red);
+        }
+        
+        .progress-section {
+            margin-top: 16px;
+        }
+        
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-blue);
+            transition: width 0.3s ease;
+        }
+        
+        .chart-container {
+            height: 120px;
+            margin-top: 16px;
+        }
+        
+        /* Feedback Log */
+        .log-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .log-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .terminal {
+            background: #0d1117;
+            border-radius: 8px;
+            padding: 12px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        
+        .terminal .entry {
+            color: #22c55e;
+            margin-bottom: 4px;
+        }
+        
+        .terminal .entry.error {
+            color: var(--accent-red);
+        }
+        
+        .terminal .entry.done {
+            color: var(--accent-gold);
+            font-weight: 600;
+        }
+        
+        .terminal .timestamp {
+            color: #6b7280;
+        }
+        
+        /* Episode Summary */
+        .summary-card {
+            display: none;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        
+        .summary-card.visible {
+            display: block;
+        }
+        
+        .summary-card h2 {
+            font-size: 20px;
+            margin-bottom: 16px;
+            color: var(--accent-gold);
+        }
+        
+        .summary-card .final-score {
+            font-size: 64px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .summary-card .final-score.excellent {
+            color: var(--accent-green);
+        }
+        
+        .summary-card .final-score.good {
+            color: var(--accent-yellow);
+        }
+        
+        .summary-card .final-score.poor {
+            color: var(--accent-red);
+        }
+        
+        .summary-card .stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin: 16px 0;
+            color: var(--text-secondary);
+        }
+        
+        .summary-card button {
+            margin-top: 16px;
+            padding: 12px 24px;
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .summary-card button:hover {
+            transform: translateY(-1px);
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-left">
+                <h1>ML Experiment Triage Environment</h1>
+                <p class="subtitle">OpenEnv-Compliant RL Benchmark</p>
+            </div>
+            <div class="header-right">
+                <div class="live-badge">
+                    <span class="live-dot"></span>
+                    <span>🟢 Live</span>
+                </div>
+                <div class="social-links">
+                    <a href="https://github.com" target="_blank">🐙 GitHub</a>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Task Selector -->
+        <div class="task-selector">
+            <div class="task-card" data-task-id="1">
+                <h3>Task 1: Find Best Experiment</h3>
+                <span class="difficulty easy">Easy</span>
+            </div>
+            <div class="task-card" data-task-id="2">
+                <h3>Task 2: Identify Overfitting</h3>
+                <span class="difficulty medium">Medium</span>
+            </div>
+            <div class="task-card" data-task-id="3">
+                <h3>Task 3: Suggest Next Config</h3>
+                <span class="difficulty hard">Hard</span>
+            </div>
+        </div>
+        
+        <!-- Episode Summary -->
+        <div class="summary-card" id="episode-summary">
+            <h2>🎉 Episode Complete!</h2>
+            <div class="final-score" id="final-score">0.00</div>
+            <div class="stats">
+                <div>Steps: <span id="steps-taken">0</span></div>
+                <div>Total Reward: <span id="total-reward">0.00</span></div>
+            </div>
+            <button onclick="playAgain()">Play Again</button>
+        </div>
+        
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- Experiment Table -->
+                <div class="table-card">
+                    <h2>📊 Experiments</h2>
+                    <div id="table-container">
+                        <div class="empty-state">Select a task to load experiments</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column -->
+            <div class="right-column">
+                <div class="action-panel">
+                    <!-- Investigate -->
+                    <div class="action-card">
+                        <h3>🔍 INVESTIGATE</h3>
+                        <select id="investigate-exp">
+                            <option value="">Select experiment...</option>
+                        </select>
+                        <button class="investigate" onclick="takeAction('investigate')">Investigate</button>
+                    </div>
+                    
+                    <!-- Discard -->
+                    <div class="action-card">
+                        <h3>🗑️ DISCARD</h3>
+                        <select id="discard-exp">
+                            <option value="">Select experiment...</option>
+                        </select>
+                        <button class="discard" onclick="takeAction('discard')">Discard</button>
+                    </div>
+                    
+                    <!-- Suggest -->
+                    <div class="action-card">
+                        <h3>💡 SUGGEST</h3>
+                        <input type="text" id="suggest-model" placeholder="Model name (e.g., resnet50)">
+                        <input type="number" id="suggest-lr" placeholder="Learning rate (e.g., 0.001)" step="0.0001">
+                        <input type="number" id="suggest-epochs" placeholder="Epochs (e.g., 50)">
+                        <button class="suggest" onclick="takeAction('suggest')">Suggest</button>
+                    </div>
+                    
+                    <!-- Summarize -->
+                    <div class="action-card">
+                        <h3>📋 SUMMARIZE</h3>
+                        <input type="text" id="summarize-exp" placeholder="Best exp_id (e.g., exp_004)">
+                        <button class="summarize" onclick="takeAction('summarize')">Summarize</button>
+                    </div>
+                </div>
+                
+                <!-- Reward Tracker -->
+                <div class="reward-card" style="margin-top: 16px;">
+                    <h3>📈 REWARD TRACKER</h3>
+                    <div class="total-reward positive" id="total-reward">0.00</div>
+                    <div class="progress-section">
+                        <div class="progress-label">
+                            <span>Step <span id="current-step">0</span>/<span id="max-step">10</span></span>
+                            <span><span id="progress-pct">0</span>%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="reward-chart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Feedback Log -->
+                <div class="log-card" style="margin-top: 16px;">
+                    <h3>📝 FEEDBACK LOG</h3>
+                    <div class="terminal" id="terminal">
+                        <div class="entry"><span class="timestamp">[Waiting for task...]</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentTaskId = null;
+        let currentStep = 0;
+        let maxSteps = 10;
+        let totalReward = 0;
+        let rewardHistory = [];
+        let chart = null;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            setupTaskCards();
+        });
+        
+        function initChart() {
+            const ctx = document.getElementById('reward-chart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#3b82f6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            display: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#9ca3af'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function setupTaskCards() {
+            document.querySelectorAll('.task-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const taskId = parseInt(card.dataset.taskId);
+                    selectTask(taskId);
+                });
+            });
+        }
+        
+        async function selectTask(taskId) {
+            currentTaskId = taskId;
+            
+            // Update UI
+            document.querySelectorAll('.task-card').forEach(card => {
+                card.classList.toggle('selected', parseInt(card.dataset.taskId) === taskId);
+            });
+            
+            // Reset state
+            currentStep = 0;
+            totalReward = 0;
+            rewardHistory = [];
+            document.getElementById('episode-summary').classList.remove('visible');
+            
+            // Call reset API
+            const response = await fetch('/reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task_id: taskId })
+            });
+            
+            const data = await response.json();
+            maxSteps = data.max_steps;
+            
+            updateUI(data);
+            addLog(`Task ${taskId} loaded. ${data.experiments.length} experiments ready.`);
+        }
+        
+        function updateUI(data) {
+            currentStep = data.current_step;
+            
+            // Update progress
+            document.getElementById('current-step').textContent = currentStep;
+            document.getElementById('max-step').textContent = maxSteps;
+            const pct = Math.round((currentStep / maxSteps) * 100);
+            document.getElementById('progress-pct').textContent = pct;
+            document.getElementById('progress-fill').style.width = pct + '%';
+            
+            // Update reward display
+            document.getElementById('total-reward').textContent = totalReward.toFixed(2);
+            document.getElementById('total-reward').className = 'total-reward ' + (totalReward >= 0 ? 'positive' : 'negative');
+            
+            // Update experiment table
+            renderTable(data.experiments);
+            
+            // Update dropdowns
+            updateDropdowns(data.experiments);
+        }
+        
+        function renderTable(experiments) {
+            const container = document.getElementById('table-container');
+            
+            // Find best experiment (highest val_acc)
+            let bestExp = null;
+            let bestValAcc = -1;
+            experiments.forEach(exp => {
+                if (exp.val_acc != null && exp.val_acc > bestValAcc) {
+                    bestValAcc = exp.val_acc;
+                    bestExp = exp.exp_id;
+                }
+            });
+            
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Exp ID</th>
+                            <th>Model</th>
+                            <th>LR</th>
+                            <th>Epochs</th>
+                            <th>Train Acc</th>
+                            <th>Val Acc</th>
+                            <th>Train Loss</th>
+                            <th>Val Loss</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            experiments.forEach(exp => {
+                const isBest = exp.exp_id === bestExp;
+                const trainAcc = exp.train_acc != null ? exp.train_acc.toFixed(2) : 'N/A';
+                const valAcc = exp.val_acc != null ? exp.val_acc.toFixed(2) : 'N/A';
+                const trainLoss = exp.train_loss != null ? exp.train_loss.toFixed(2) : 'N/A';
+                const valLoss = exp.val_loss != null ? exp.val_loss.toFixed(2) : 'N/A';
+                
+                // Overfitting warning
+                let overfitWarning = '';
+                if (exp.train_acc != null && exp.val_acc != null) {
+                    const gap = exp.train_acc - exp.val_acc;
+                    if (gap > 0.20) {
+                        overfitWarning = '<span class="overfit-warning" title="Train-Val gap > 0.20">⚠️</span>';
+                    }
+                }
+                
+                html += `
+                    <tr class="${isBest ? 'best' : ''}">
+                        <td><strong>${exp.exp_id}</strong> ${overfitWarning}</td>
+                        <td>${exp.model_name}</td>
+                        <td>${exp.learning_rate}</td>
+                        <td>${exp.epochs}</td>
+                        <td>${trainAcc}</td>
+                        <td>${valAcc}</td>
+                        <td>${trainLoss}</td>
+                        <td>${valLoss}</td>
+                        <td><span class="status-badge ${exp.status}">${exp.status}</span></td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+        
+        function updateDropdowns(experiments) {
+            const options = experiments.map(exp => 
+                `<option value="${exp.exp_id}">${exp.exp_id} - ${exp.model_name}</option>`
+            ).join('');
+            
+            document.getElementById('investigate-exp').innerHTML = 
+                '<option value="">Select experiment...</option>' + options;
+            document.getElementById('discard-exp').innerHTML = 
+                '<option value="">Select experiment...</option>' + options;
+        }
+        
+        async function takeAction(actionType) {
+            let action = { action_type: actionType };
+            
+            if (actionType === 'investigate') {
+                action.exp_id = document.getElementById('investigate-exp').value;
+            } else if (actionType === 'discard') {
+                action.exp_id = document.getElementById('discard-exp').value;
+            } else if (actionType === 'suggest') {
+                const model = document.getElementById('suggest-model').value;
+                const lr = parseFloat(document.getElementById('suggest-lr').value);
+                const epochs = parseInt(document.getElementById('suggest-epochs').value);
+                action.suggestion = { model_name: model, learning_rate: lr, epochs: epochs };
+            } else if (actionType === 'summarize') {
+                action.summary = document.getElementById('summarize-exp').value;
+            }
+            
+            const response = await fetch('/step', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: action })
+            });
+            
+            const result = await response.json();
+            
+            // Update reward
+            const reward = result.reward.value;
+            totalReward += reward;
+            currentStep = result.observation.current_step;
+            
+            // Update chart
+            rewardHistory.push(reward);
+            chart.data.labels.push(currentStep);
+            chart.data.datasets[0].data.push(totalReward);
+            chart.update();
+            
+            // Log
+            addLog(`[${actionType.toUpperCase()}] Reward: ${reward.toFixed(4)} - ${result.reward.reason}`);
+            
+            // Update UI
+            updateUI(result.observation);
+            
+            // Check if done
+            if (result.done) {
+                showSummary(result.reward.value);
+            }
+        }
+        
+        function addLog(message) {
+            const terminal = document.getElementById('terminal');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'entry';
+            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+            terminal.insertBefore(entry, terminal.firstChild);
+        }
+        
+        function showSummary(score) {
+            addLog(`[DONE] Final Score: ${score.toFixed(2)}`);
+            
+            const summary = document.getElementById('episode-summary');
+            const finalScore = document.getElementById('final-score');
+            
+            finalScore.textContent = score.toFixed(2);
+            finalScore.className = 'final-score ' + (score >= 0.8 ? 'excellent' : score >= 0.5 ? 'good' : 'poor');
+            
+            document.getElementById('steps-taken').textContent = currentStep;
+            document.getElementById('total-reward').textContent = totalReward.toFixed(2);
+            
+            summary.classList.add('visible');
+        }
+        
+        function playAgain() {
+            if (currentTaskId) {
+                selectTask(currentTaskId);
+            }
+        }
+    </script>
+</body>
+</html>
