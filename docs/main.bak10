@@ -83,7 +83,7 @@ Our main contributions are:
 
 \begin{enumerate}
 	\item An \textbf{OpenEnv-compliant} environment following the official Meta-PyTorch specification
-	\item Five tasks with \textbf{increasing difficulty} testing different ML analysis skills
+	\item Three tasks with \textbf{increasing difficulty} testing different ML analysis skills
 	\item A \textbf{stateless HTTP architecture} with state serialization for scalable deployment
 	\item A \textbf{built-in web interface} deployed on Hugging Face Spaces
 	\item An \textbf{inference pipeline} demonstrating how AI agents interact with the environment
