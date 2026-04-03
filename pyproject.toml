@@ -17,6 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
+server = "server.app:main"
 ml-triage-server = "server.app:main"
 
 [build-system]
