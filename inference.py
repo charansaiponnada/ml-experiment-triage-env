@@ -1,12 +1,43 @@
+"""
+ML Experiment Triage Inference Script
+=====================================
+
+MANDATORY
+- Before submitting, ensure the following variables are defined in your environment configuration:
+    API_BASE_URL   The API endpoint for the LLM.
+    MODEL_NAME     The model identifier to use for inference.
+    HF_TOKEN       Your Hugging Face / API key.
+
+- The inference script must be named `inference.py` and placed in the root directory of the project
+- Participants must use OpenAI Client for all LLM calls using above variables
+
+STDOUT FORMAT (STRICTLY REQUIRED):
+    [START] task=<task_name> env=<benchmark> model=<model_name>
+    [STEP]  step=<n> action=<action_str> reward=<0.00> done=<true|false> error=<msg|null>
+    [END]   success=<true|false> steps=<n> score=<0.000> rewards=<r1,r2,...,rn>
+
+  Rules:
+    - One [START] line at episode begin.
+    - One [STEP] line per step, immediately after env.step() returns.
+    - One [END] line after env.close(), always emitted (even on exception).
+    - reward and rewards are formatted to 2 decimal places.
+    - score is formatted to 3 decimal places.
+    - done and success are lowercase booleans: true or false.
+    - error is the raw last_action_error string, or null if none.
+    - All fields on a single line with no newlines within a line.
+"""
+
 import os
 import json
 import requests
 from openai import OpenAI
 
+API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY", "")
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
-API_KEY = os.getenv("HF_TOKEN", "")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
+BENCHMARK = "ml-experiment-triage"
+SUCCESS_SCORE_THRESHOLD = 0.5
 
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
@@ -34,6 +65,29 @@ Rules:
 - ONLY respond with JSON. Nothing else."""
 
 
+def log_start(task: str, env: str, model: str) -> None:
+    print(f"[START] task={task} env={env} model={model}", flush=True)
+
+
+def log_step(
+    step: int, action: str, reward: float, done: bool, error: str = None
+) -> None:
+    error_val = error if error else "null"
+    done_val = str(done).lower()
+    print(
+        f"[STEP] step={step} action={action} reward={reward:.2f} done={done_val} error={error_val}",
+        flush=True,
+    )
+
+
+def log_end(success: bool, steps: int, score: float, rewards: list) -> None:
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    print(
+        f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
+        flush=True,
+    )
+
+
 def get_action(obs_text: str, history: list) -> dict:
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     for h in history[-6:]:
@@ -54,21 +108,25 @@ def get_action(obs_text: str, history: list) -> dict:
         return {"action_type": "investigate", "exp_id": "exp_001"}
 
 
-def run_task(task: dict) -> float:
+def run_task(task: dict) -> tuple:
     task_id = task["id"]
     task_name = task["name"]
     max_steps = task["max_steps"]
+    max_reward = task["max_reward"]
 
-    print(
-        f"[START] task={task_name} env=ml-experiment-triage model={MODEL_NAME}",
-        flush=True,
-    )
+    log_start(task=task_name, env=BENCHMARK, model=MODEL_NAME)
 
-    resp = requests.post(f"{ENV_BASE_URL}/reset", json={"task_id": task_id})
+    resp = requests.post(f"{ENV_BASE_URL}/reset", json={"task_id": task_id}, timeout=30)
+    if resp.status_code != 200:
+        error_msg = f"reset_failed:{resp.status_code}"
+        log_step(1, "reset()", 0.0, True, error_msg)
+        log_end(False, 0, 0.0, [])
+        return 0.0
+
     obs = resp.json().get("observation", {})
 
     history = []
-    total_reward = 0.0
+    rewards = []
     steps = 0
     success = False
     serialized_state = obs.get("serialized_state", {})
@@ -83,56 +141,63 @@ def run_task(task: dict) -> float:
         obs_text += f"Step: {obs.get('current_step', step)}/{obs.get('max_steps', max_steps)}\n\n"
         obs_text += "Experiments:\n"
         for e in exps:
-            obs_text += (
-                f"  {e['exp_id']}: model={e['model_name']} "
-                f"lr={e['learning_rate']} epochs={e['epochs']} "
-                f"train_acc={e['train_acc']} val_acc={e['val_acc']} "
-                f"status={e['status']}\n"
-            )
+            obs_text += f"  {e['exp_id']}: model={e['model_name']} lr={e['learning_rate']} epochs={e['epochs']} train_acc={e['train_acc']} val_acc={e['val_acc']} status={e['status']}\n"
 
         action_dict = get_action(obs_text, history)
         action_type = action_dict.get("action_type", "investigate")
 
-        # Pass serialized_state in action for stateless HTTP
+        action_str = json.dumps(action_dict)
+
         if serialized_state:
             action_dict["serialized_state"] = serialized_state
 
-        step_resp = requests.post(f"{ENV_BASE_URL}/step", json={"action": action_dict})
-        result = step_resp.json()
+        try:
+            step_resp = requests.post(
+                f"{ENV_BASE_URL}/step", json={"action": action_dict}, timeout=30
+            )
+            result = step_resp.json()
+        except Exception as e:
+            log_step(step, action_str, 0.0, True, f"request_error:{str(e)}")
+            log_end(False, step, 0.0, rewards)
+            return 0.0
 
         reward = result.get("reward", {})
         reward_val = (
-            reward.get("value", 0.0) if isinstance(reward, dict) else float(reward)
+            float(reward.get("value", 0.0))
+            if isinstance(reward, dict)
+            else float(reward or 0.0)
         )
         done = result.get("done", False)
         obs = result.get("observation", {})
 
-        # Get updated serialized_state for next step
         serialized_state = obs.get("serialized_state", {})
 
-        total_reward += reward_val
+        rewards.append(reward_val)
         steps = step
 
         history.append({"obs": obs_text, "action": json.dumps(action_dict)})
 
-        print(
-            f"[STEP] step={step} action={action_type} reward={reward_val:.4f} done={done}",
-            flush=True,
-        )
+        log_step(step=step, action=action_str, reward=reward_val, done=done, error=None)
 
         if done:
-            success = reward_val >= 0.5
+            success = reward_val >= SUCCESS_SCORE_THRESHOLD
             break
 
-    score = min(max(total_reward / task["max_reward"], 0.0), 1.0)
-    print(f"[END] success={success} steps={steps} score={score:.4f}", flush=True)
+    score = min(max(sum(rewards) / max_reward, 0.0), 1.0)
+
+    log_end(success=success, steps=steps, score=score, rewards=rewards)
     return score
 
 
 if __name__ == "__main__":
     scores = []
     for task in TASKS:
-        score = run_task(task)
-        scores.append(score)
+        try:
+            score = run_task(task)
+            scores.append(score)
+        except Exception as e:
+            print(f"[ERROR] Task {task['name']} failed: {e}", flush=True)
+            scores.append(0.0)
+
     print(f"\nFinal scores: {scores}", flush=True)
     print(f"Average: {sum(scores) / len(scores):.4f}", flush=True)
