@@ -83,7 +83,7 @@ Our main contributions are:
 
 \begin{enumerate}
 	\item An \textbf{OpenEnv-compliant} environment following the official Meta-PyTorch specification
-	\item Five tasks with \textbf{increasing difficulty} testing different ML analysis skills
+	\item Three tasks with \textbf{increasing difficulty} testing different ML analysis skills
 	\item A \textbf{stateless HTTP architecture} with state serialization for scalable deployment
 	\item A \textbf{built-in web interface} deployed on Hugging Face Spaces
 	\item An \textbf{inference pipeline} demonstrating how AI agents interact with the environment
@@ -648,13 +648,9 @@ Using GPT-4o-mini as the agent:
 		Find Best Experiment & Easy       & 0.85           \\
 		Identify Overfitting & Medium     & 0.62           \\
 		Suggest Next Config  & Hard       & 0.41           \\
-		Compare Experiments  & Medium     & 0.55           \\
-		Debug Failed Run     & Hard       & 0.38           \\
 		\bottomrule
 	\end{tabular}
 \end{table}
-
-\textbf{Average Baseline Score: 0.56}
 
 \subsection{Metrics}
 
@@ -675,7 +671,7 @@ The environment is deterministic given the same task ID and action sequence. All
 We presented an OpenEnv-compliant RL benchmark for ML experiment triage. The environment:
 
 \begin{itemize}
-	\item Provides five tasks with increasing difficulty
+	\item Provides three tasks with increasing difficulty
 	\item Uses a stateless HTTP architecture with state serialization
 	\item Deploys automatically to Hugging Face Spaces
 	\item Includes a web interface for manual interaction

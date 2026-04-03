@@ -689,7 +689,10 @@ class MLTriageEnvironment(Environment):
         reward_reason = ""
 
         if self.done:
-            from models import MLTriageObservation, MLTriageState
+            self.feedback = (
+                "Episode already complete. Please reset to start a new episode."
+            )
+            from models import MLTriageObservation
 
             return MLTriageObservation(
                 experiments=self.experiments,
@@ -697,19 +700,35 @@ class MLTriageEnvironment(Environment):
                 max_steps=self.max_steps,
                 task_id=self.task_id,
                 task_description=self.task_description,
-                feedback="Episode already done",
+                feedback=self.feedback,
+                done=self.done,
                 serialized_state=self._get_state(),
             )
 
         valid_action = True
 
-        if action.action_type not in ["investigate", "discard", "suggest", "summarize"]:
+        if action.action_type not in [
+            "investigate",
+            "discard",
+            "suggest",
+            "summarize",
+            "compare",
+            "diagnose",
+        ]:
             reward_value = -0.05
             reward_reason = f"Invalid action type: {action.action_type}"
             valid_action = False
         elif action.action_type in ["investigate", "discard"] and not action.exp_id:
             reward_value = -0.05
             reward_reason = f"Missing exp_id for action: {action.action_type}"
+            valid_action = False
+        elif action.action_type == "compare" and not action.comparison:
+            reward_value = -0.05
+            reward_reason = "Missing comparison data"
+            valid_action = False
+        elif action.action_type == "diagnose" and not action.diagnosis:
+            reward_value = -0.05
+            reward_reason = "Missing diagnosis data"
             valid_action = False
 
         if valid_action:
@@ -785,6 +804,26 @@ class MLTriageEnvironment(Environment):
                     reward_value = -0.05
                     reward_reason = "Missing suggestion data"
 
+            elif action.action_type == "compare":
+                if action.comparison:
+                    reward_value = 0.15
+                    exp_a = action.comparison.get("exp_a", "")
+                    exp_b = action.comparison.get("exp_b", "")
+                    reward_reason = f"Comparing {exp_a} vs {exp_b}. Analysis noted."
+                else:
+                    reward_value = -0.05
+                    reward_reason = "Missing comparison data"
+
+            elif action.action_type == "diagnose":
+                if action.diagnosis:
+                    reward_value = 0.15
+                    exp_id = action.diagnosis.get("exp_id", "")
+                    reason = action.diagnosis.get("reason", "")
+                    reward_reason = f"Diagnosing {exp_id}: {reason[:50]}"
+                else:
+                    reward_value = -0.05
+                    reward_reason = "Missing diagnosis data"
+
             elif action.action_type == "summarize":
                 if self.task_id == 1:
                     score = self.current_task.grader(
@@ -794,8 +833,14 @@ class MLTriageEnvironment(Environment):
                     score = self.current_task.grader(
                         self.experiments, self.episode_history, action.exp_id
                     )
-                else:
+                elif self.task_id == 3:
                     score = self.current_task.grader(None, None, action.suggestion)
+                elif self.task_id == 4:
+                    score = self.current_task.grader(None, None, action.comparison)
+                elif self.task_id == 5:
+                    score = self.current_task.grader(None, None, action.diagnosis)
+                else:
+                    score = 0.0
 
                 reward_value = score
                 if score >= 1.0:
@@ -836,6 +881,7 @@ class MLTriageEnvironment(Environment):
             task_id=self.task_id,
             task_description=self.task_description,
             feedback=self.feedback,
+            done=self.done,
             serialized_state=self._get_state(),
         )
 

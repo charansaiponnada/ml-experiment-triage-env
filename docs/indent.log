@@ -1,6 +1,6 @@
 INFO:  latexindent.pl version 3.24.7, 2025-08-15, a script to indent .tex files
        latexindent.pl lives here: C:/Users/cherr/AppData/Local/Programs/MiKTeX/scripts/latexindent/
-       Fri Apr  3 18:56:01 2026
+       Fri Apr  3 20:59:27 2026
        Filename: C:\projects\Hackathons\ml-experiment-triage-env\docs\main.tex
 INFO:  Processing switches:
        -s|--silent: Silent mode active (you have used either -s or --silent)
@@ -30,7 +30,11 @@ INFO:  Backup procedure (-w flag active):
        C:\projects\Hackathons\ml-experiment-triage-env\docs\main.bak4 already exists, incrementing by 1 (see maxNumberOfBackUps)
        C:\projects\Hackathons\ml-experiment-triage-env\docs\main.bak5 already exists, incrementing by 1 (see maxNumberOfBackUps)
        C:\projects\Hackathons\ml-experiment-triage-env\docs\main.bak6 already exists, incrementing by 1 (see maxNumberOfBackUps)
-       Backing up C:\projects\Hackathons\ml-experiment-triage-env\docs\main.tex to C:\projects\Hackathons\ml-experiment-triage-env\docs\main.bak7...
+       C:\projects\Hackathons\ml-experiment-triage-env\docs\main.bak7 already exists, incrementing by 1 (see maxNumberOfBackUps)
+       C:\projects\Hackathons\ml-experiment-triage-env\docs\main.bak8 already exists, incrementing by 1 (see maxNumberOfBackUps)
+       C:\projects\Hackathons\ml-experiment-triage-env\docs\main.bak9 already exists, incrementing by 1 (see maxNumberOfBackUps)
+       C:\projects\Hackathons\ml-experiment-triage-env\docs\main.bak10 already exists, incrementing by 1 (see maxNumberOfBackUps)
+       Backing up C:\projects\Hackathons\ml-experiment-triage-env\docs\main.tex to C:\projects\Hackathons\ml-experiment-triage-env\docs\main.bak11...
        C:\projects\Hackathons\ml-experiment-triage-env\docs\main.tex will be overwritten after indentation
 INFO:  Phase 1: searching for objects
 INFO:  Phase 2: finding surrounding indentation
