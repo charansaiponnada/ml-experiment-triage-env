@@ -318,6 +318,27 @@ class MLTriageObservation(Observation):
 
 The reward system is designed to provide dense feedback for each action, encouraging the agent to learn effective triage strategies.
 
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[
+			node distance=1.2cm,
+			task/.style={rectangle, draw, rounded corners, minimum width=3cm, minimum height=2cm, align=center},
+			arrow/.style={thick,->,>=stealth},
+			header/.style={fill=#1f77b4, text=white, font=\bfseries}
+		]
+
+		\node[header] (header) at (0,0) {Task Overview};
+		\node[task, fill=green!30] (task1) at (-4,-1.5) {Task 1\\Easy\\Find Best\\8 experiments\\10 steps};
+		\node[task, fill=yellow!30] (task2) at (0,-1.5) {Task 2\\Medium\\Overfitting\\10 experiments\\15 steps};
+		\node[task, fill=red!30] (task3) at (4,-1.5) {Task 3\\Hard\\Suggest\\12 experiments\\20 steps};
+
+		\draw[arrow] (task1) -- node[above] {+1.0} (task2);
+		\draw[arrow] (task2) -- node[above] {+0.15/step} (task3);
+		\draw[arrow] (task3) -- node[above] {+0.5} (header);
+
+	\end{tikzpicture}
+\end{figure}
+
 \begin{table}[h]
 	\centering
 	\begin{tabular}{@{}lc@{}}
@@ -478,31 +499,31 @@ The workflow:
 The environment follows a state machine where actions trigger transitions:
 
 \begin{figure}[h]
-	\centering
-	\begin{tikzpicture}[
-			node distance=1.5cm,
-			state/.style={rectangle, draw, rounded corners, minimum width=1.8cm, align=center},
-			arrow/.style={thick,->,>=stealth},
-			start/.style={circle, draw, fill=green!30, minimum width=0.8cm}
-		]
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    state/.style={rectangle, draw, rounded corners, minimum width=1.8cm, align=center},
+    arrow/.style={thick,->,>=stealth},
+    start/.style={circle, draw, fill=green!30, minimum width=0.8cm}
+]
 
-		\node[start] (start) at (0,0) {};
-		\node[state, fill=blue!20] (reset) at (2,0) {Reset};
-		\node[state, fill=yellow!20] (investigate) at (5,0) {Investigate};
-		\node[state, fill=orange!20] (discard) at (5,-2) {Discard};
-		\node[state, fill=purple!20] (suggest) at (8,-1) {Suggest};
-		\node[state, fill=red!20] (summarize) at (8,-3) {Summarize};
-		\node[state, fill=green!20] (done) at (11,-2) {Done};
+\node[start] (start) at (0,0) {};
+\node[state, fill=blue!20] (reset) at (2,0) {Reset};
+\node[state, fill=yellow!20] (investigate) at (5,0) {Investigate};
+\node[state, fill=orange!20] (discard) at (5,-2) {Discard};
+\node[state, fill=purple!20] (suggest) at (8,-1) {Suggest};
+\node[state, fill=red!20] (summarize) at (8,-3) {Summarize};
+\node[state, fill=green!20] (done) at (11,-2) {Done};
 
-		\draw[arrow] (start) -- (reset);
-		\draw[arrow] (reset) -- node[above] {investigate} (investigate);
-		\draw[arrow] (reset) -- node[right] {discard} (discard);
-		\draw[arrow] (investigate) -- node[above] {summarize} (summarize);
-		\draw[arrow] (discard) -- node[above] {summarize} (summarize);
-		\draw[arrow] (suggest) -- (summarize);
-		\draw[arrow] (summarize) -- node[above] {reward} (done);
+\draw[arrow] (start) -- (reset);
+\draw[arrow] (reset) -- node[above] {investigate} (investigate);
+\draw[arrow] (reset) -- node[right] {discard} (discard);
+\draw[arrow] (investigate) -- node[above] {summarize} (summarize);
+\draw[arrow] (discard) -- node[above] {summarize} (summarize);
+\draw[arrow] (suggest) -- (summarize);
+\draw[arrow] (summarize) -- node[above] {reward} (done);
 
-	\end{tikzpicture}
+\end{tikzpicture}
 \end{figure}
 
 Each action transitions the environment to a new state, accumulating rewards until the episode concludes.
