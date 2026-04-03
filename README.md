@@ -126,7 +126,11 @@ docker run -p 7860:7860 ml-experiment-triage
 
 ### Hugging Face Spaces
 
-This environment is deployed on Hugging Face Spaces. Visit: https://huggingface.co/spaces/charansaiponnada/ml-experiment-triage-env
+This environment is deployed on Hugging Face Spaces:  
+https://huggingface.co/spaces/charansaiponnada/ml-experiment-triage-env
+
+Source code available on GitHub:  
+https://github.com/charansaiponnada/ml-experiment-triage-env
 
 ## Baseline Scores
 

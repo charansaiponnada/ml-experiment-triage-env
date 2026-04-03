@@ -3,6 +3,8 @@ version: "1.0.0"
 description: >
   An RL environment where an AI agent triages ML experiment results.
   Identify best runs, detect overfitting, and suggest next configs.
+  
+  GitHub: https://github.com/charansaiponnada/ml-experiment-triage-env
 tags:
   - openenv
   - machine-learning  
