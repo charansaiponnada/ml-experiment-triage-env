@@ -136,11 +136,42 @@ https://github.com/charansaiponnada/ml-experiment-triage-env
 
 ## Baseline Scores
 
-| Task | Difficulty | Baseline Score |
-|------|-----------|----------------|
-| Find Best Experiment | Easy | 0.85 |
-| Identify Overfitting | Medium | 0.62 |
-| Suggest Next Config | Hard | 0.41 |
+| Task | Difficulty | Max Steps | Baseline Score |
+|------|-----------|-----------|----------------|
+| 1. Find Best Experiment | Easy | 10 | 0.85 |
+| 2. Identify Overfitting | Medium | 15 | 0.62 |
+| 3. Suggest Next Config | Hard | 20 | 0.41 |
+| 4. Compare Experiments | Medium | 12 | 0.55 |
+| 5. Debug Failed Run | Hard | 15 | 0.38 |
+
+**Average Baseline Score: 0.56**
+
+## Benchmark Results
+
+### Runtime Requirements
+- **Total execution time**: ~5-10 minutes for all 5 tasks
+- **Memory usage**: < 2GB
+- **Compatible with**: 2 vCPU, 8GB RAM
+
+### Reproducibility
+
+To reproduce baseline scores:
+```bash
+export API_BASE_URL="https://api.openai.com/v1"
+export MODEL_NAME="gpt-4o-mini"
+export HF_TOKEN="your-token-here"
+export ENV_BASE_URL="http://localhost:7860"
+python inference.py
+```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| API_BASE_URL | LLM API endpoint | https://api.openai.com/v1 |
+| MODEL_NAME | Model identifier | gpt-4o-mini |
+| HF_TOKEN | API key | Required |
+| ENV_BASE_URL | Environment URL | http://localhost:7860 |
 
 ## How to Cite
 

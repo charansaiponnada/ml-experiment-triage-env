@@ -45,6 +45,8 @@ TASKS = [
     {"id": 1, "name": "find_best_experiment", "max_steps": 10, "max_reward": 1.1},
     {"id": 2, "name": "identify_overfitting", "max_steps": 15, "max_reward": 0.6},
     {"id": 3, "name": "suggest_next_experiment", "max_steps": 20, "max_reward": 0.5},
+    {"id": 4, "name": "compare_experiments", "max_steps": 12, "max_reward": 1.0},
+    {"id": 5, "name": "debug_failed_run", "max_steps": 15, "max_reward": 1.0},
 ]
 
 SYSTEM_PROMPT = """You are an ML experiment analysis agent.
@@ -116,7 +118,16 @@ def run_task(task: dict) -> tuple:
 
     log_start(task=task_name, env=BENCHMARK, model=MODEL_NAME)
 
-    resp = requests.post(f"{ENV_BASE_URL}/reset", json={"task_id": task_id}, timeout=30)
+    try:
+        resp = requests.post(
+            f"{ENV_BASE_URL}/reset", json={"task_id": task_id}, timeout=60
+        )
+    except Exception as e:
+        error_msg = f"reset_error:{str(e)}"
+        log_step(1, "reset()", 0.0, True, error_msg)
+        log_end(False, 0, 0.0, [])
+        return 0.0
+
     if resp.status_code != 200:
         error_msg = f"reset_failed:{resp.status_code}"
         log_step(1, "reset()", 0.0, True, error_msg)
@@ -153,7 +164,7 @@ def run_task(task: dict) -> tuple:
 
         try:
             step_resp = requests.post(
-                f"{ENV_BASE_URL}/step", json={"action": action_dict}, timeout=30
+                f"{ENV_BASE_URL}/step", json={"action": action_dict}, timeout=60
             )
             result = step_resp.json()
         except Exception as e:
@@ -183,7 +194,7 @@ def run_task(task: dict) -> tuple:
             success = reward_val >= SUCCESS_SCORE_THRESHOLD
             break
 
-    score = min(max(sum(rewards) / max_reward, 0.0), 1.0)
+    score = min(max(sum(rewards), 0.0), 1.0)
 
     log_end(success=success, steps=steps, score=score, rewards=rewards)
     return score

@@ -27,6 +27,16 @@ tasks:
     difficulty: hard
     max_steps: 20
     description: "Analyze incomplete results, suggest next hyperparameter config"
+  - id: 4
+    name: compare_experiments
+    difficulty: medium
+    max_steps: 12
+    description: "Compare two experiments and explain tradeoffs"
+  - id: 5
+    name: debug_failed_run
+    difficulty: hard
+    max_steps: 15
+    description: "Diagnose failed experiments and suggest fixes"
 action_space:
   type: discrete
   actions:
@@ -42,6 +52,12 @@ action_space:
     - name: summarize
       description: "Final answer — ends episode"
       params: [summary]
+    - name: compare
+      description: "Compare two experiments"
+      params: [comparison]
+    - name: diagnose
+      description: "Diagnose failed experiment"
+      params: [diagnosis]
 observation_space:
   type: structured
   fields:
@@ -51,10 +67,14 @@ observation_space:
       type: int
     - name: max_steps
       type: int
+    - name: task_id
+      type: int
     - name: task_description
       type: str
     - name: feedback
       type: str
+    - name: done
+      type: bool
     - name: serialized_state
       type: dict
 reward:
