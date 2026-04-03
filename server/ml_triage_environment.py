@@ -865,6 +865,7 @@ class MLTriageEnvironment(Environment):
             task_id=self.task_id,
             task_description=self.task_description,
             feedback=self.feedback,
+            done=self.done,
             serialized_state=self._get_state(),
         )
 
