@@ -84,6 +84,57 @@ def grade_task_3(suggestion: Optional[Dict]) -> float:
         return 0.0
 
 
+def grade_task_4(comparison: Optional[Dict]) -> float:
+    if not comparison:
+        return 0.0
+
+    analysis = comparison.get("analysis", "").lower()
+
+    score = 0.0
+
+    if "exp_004" in analysis:
+        score += 0.4
+    if "validation" in analysis or "val_acc" in analysis:
+        score += 0.2
+    if "generalization" in analysis:
+        score += 0.2
+    if "tradeoff" in analysis or "trade-off" in analysis:
+        score += 0.2
+
+    return min(1.0, score)
+
+
+def grade_task_5(diagnosis: Optional[Dict]) -> float:
+    if not diagnosis:
+        return 0.0
+
+    exp_id = diagnosis.get("exp_id", "")
+    reason = diagnosis.get("reason", "").lower()
+    fix = diagnosis.get("fix", "").lower()
+
+    score = 0.0
+
+    if exp_id == "exp_005":
+        if "learning rate" in reason or "lr" in reason:
+            score += 0.35
+        if "high" in reason or "too high" in reason:
+            score += 0.1
+        if "reduce" in fix or "lower" in fix:
+            score += 0.1
+    elif exp_id == "exp_008":
+        if "memory" in reason or "oom" in reason or "gpu" in reason:
+            score += 0.35
+        if "batch" in reason:
+            score += 0.1
+    elif exp_id == "exp_003":
+        if "plateau" in reason or "schedule" in reason:
+            score += 0.35
+        if "lr" in fix or "decay" in fix:
+            score += 0.1
+
+    return min(1.0, score)
+
+
 TASK_1 = Task(
     task_id=1,
     name="find_best_experiment",
@@ -111,7 +162,25 @@ TASK_3 = Task(
     grader=grade_task_3,
 )
 
-TASKS = [TASK_1, TASK_2, TASK_3]
+TASK_4 = Task(
+    task_id=4,
+    name="compare_experiments",
+    description="Compare two experiments and explain the tradeoffs between them. Identify which is better for production use.",
+    difficulty="medium",
+    max_steps=12,
+    grader=grade_task_4,
+)
+
+TASK_5 = Task(
+    task_id=5,
+    name="debug_failed_run",
+    description="Diagnose why certain experiments failed or underperformed. Identify the root cause and suggest a fix.",
+    difficulty="hard",
+    max_steps=15,
+    grader=grade_task_5,
+)
+
+TASKS = [TASK_1, TASK_2, TASK_3, TASK_4, TASK_5]
 
 
 def get_task(task_id: int) -> Task:
