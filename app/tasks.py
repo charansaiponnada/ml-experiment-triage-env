@@ -2,6 +2,12 @@ from dataclasses import dataclass
 from typing import Callable, List, Dict, Any
 from app.models import ExperimentRecord, Action, Reward
 
+EPSILON = 1e-9
+
+
+def _clamp_strict(value: float) -> float:
+    return max(EPSILON, min(1.0 - EPSILON, value))
+
 
 @dataclass
 class Task:
@@ -25,13 +31,13 @@ def grade_task_1(
 
     if action.action_type == "summarize" and action.summary:
         if "exp_004" in action.summary:
-            return 1.0
-        return 0.0
+            return 1.0 - EPSILON
+        return EPSILON
 
     if "exp_004" in investigated_exp_ids:
         return 0.5
 
-    return 0.0
+    return EPSILON
 
 
 def grade_task_2(
@@ -54,14 +60,14 @@ def grade_task_2(
 
     score = (correct_discards / 3.0) - (wrong_discards * 0.1)
 
-    return max(0.0, min(1.0, score))
+    return _clamp_strict(score)
 
 
 def grade_task_3(
     experiments: List[ExperimentRecord], action: Action, episode_history: List[Dict]
 ) -> float:
     if action.action_type != "suggest" or not action.suggestion:
-        return 0.0
+        return EPSILON
 
     ground_truth = {"learning_rate": 0.001, "epochs": 50, "model_name": "resnet50"}
 
@@ -78,13 +84,13 @@ def grade_task_3(
         correct += 1
 
     if correct == 3:
-        return 1.0
+        return 1.0 - EPSILON
     elif correct == 2:
         return 0.6
     elif correct == 1:
         return 0.3
     else:
-        return 0.0
+        return EPSILON
 
 
 TASK_1 = Task(

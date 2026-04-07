@@ -4,6 +4,12 @@ from openenv_core import Environment
 from pydantic import BaseModel
 import json
 
+EPSILON = 1e-9
+
+
+def _clamp_strict(value: float) -> float:
+    return max(EPSILON, min(1.0 - EPSILON, value))
+
 
 @dataclass
 class Task:
@@ -26,12 +32,12 @@ def grade_task_1(
                 investigated_exp_ids.add(exp_id)
 
     if summary and "exp_004" in summary:
-        return 1.0
+        return 1.0 - EPSILON
 
     if "exp_004" in investigated_exp_ids:
         return 0.5
 
-    return 0.0
+    return EPSILON
 
 
 def grade_task_2(
@@ -54,12 +60,12 @@ def grade_task_2(
 
     score = (correct_discards / 3.0) - (wrong_discards * 0.1)
 
-    return max(0.0, min(1.0, score))
+    return _clamp_strict(score)
 
 
 def grade_task_3(suggestion: Optional[Dict]) -> float:
     if not suggestion:
-        return 0.0
+        return EPSILON
 
     ground_truth = {"learning_rate": 0.001, "epochs": 50, "model_name": "resnet50"}
 
@@ -75,18 +81,18 @@ def grade_task_3(suggestion: Optional[Dict]) -> float:
         correct += 1
 
     if correct >= 3:
-        return 1.0
+        return 1.0 - EPSILON
     elif correct == 2:
         return 0.6
     elif correct == 1:
         return 0.3
     else:
-        return 0.0
+        return EPSILON
 
 
 def grade_task_4(comparison: Optional[Dict]) -> float:
     if not comparison:
-        return 0.0
+        return EPSILON
 
     analysis = comparison.get("analysis", "").lower()
 
@@ -101,12 +107,12 @@ def grade_task_4(comparison: Optional[Dict]) -> float:
     if "tradeoff" in analysis or "trade-off" in analysis:
         score += 0.2
 
-    return min(1.0, score)
+    return _clamp_strict(score)
 
 
 def grade_task_5(diagnosis: Optional[Dict]) -> float:
     if not diagnosis:
-        return 0.0
+        return EPSILON
 
     exp_id = diagnosis.get("exp_id", "")
     reason = diagnosis.get("reason", "").lower()
@@ -132,7 +138,7 @@ def grade_task_5(diagnosis: Optional[Dict]) -> float:
         if "lr" in fix or "decay" in fix:
             score += 0.1
 
-    return min(1.0, score)
+    return _clamp_strict(score)
 
 
 TASK_1 = Task(

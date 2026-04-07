@@ -38,6 +38,7 @@ MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 BENCHMARK = "ml-experiment-triage"
 SUCCESS_SCORE_THRESHOLD = 0.5
+EPSILON = 1e-9
 
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
@@ -124,15 +125,15 @@ def run_task(task: dict) -> tuple:
         )
     except Exception as e:
         error_msg = f"reset_error:{str(e)}"
-        log_step(1, "reset()", 0.0, True, error_msg)
-        log_end(False, 0, 0.0, [])
-        return 0.0
+        log_step(1, "reset()", EPSILON, True, error_msg)
+        log_end(False, 0, EPSILON, [])
+        return EPSILON
 
     if resp.status_code != 200:
         error_msg = f"reset_failed:{resp.status_code}"
-        log_step(1, "reset()", 0.0, True, error_msg)
-        log_end(False, 0, 0.0, [])
-        return 0.0
+        log_step(1, "reset()", EPSILON, True, error_msg)
+        log_end(False, 0, EPSILON, [])
+        return EPSILON
 
     obs = resp.json().get("observation", {})
 
@@ -168,9 +169,9 @@ def run_task(task: dict) -> tuple:
             )
             result = step_resp.json()
         except Exception as e:
-            log_step(step, action_str, 0.0, True, f"request_error:{str(e)}")
-            log_end(False, step, 0.0, rewards)
-            return 0.0
+            log_step(step, action_str, EPSILON, True, f"request_error:{str(e)}")
+            log_end(False, step, EPSILON, rewards)
+            return EPSILON
 
         reward = result.get("reward", {})
         reward_val = (
@@ -194,7 +195,7 @@ def run_task(task: dict) -> tuple:
             success = reward_val >= SUCCESS_SCORE_THRESHOLD
             break
 
-    score = min(max(sum(rewards), 0.0), 1.0)
+    score = min(max(sum(rewards), EPSILON), 1.0 - EPSILON)
 
     log_end(success=success, steps=steps, score=score, rewards=rewards)
     return score
@@ -208,7 +209,7 @@ if __name__ == "__main__":
             scores.append(score)
         except Exception as e:
             print(f"[ERROR] Task {task['name']} failed: {e}", flush=True)
-            scores.append(0.0)
+            scores.append(EPSILON)
 
     print(f"\nFinal scores: {scores}", flush=True)
     print(f"Average: {sum(scores) / len(scores):.4f}", flush=True)
