@@ -4,9 +4,9 @@ ML Experiment Triage Inference Script
 
 MANDATORY
 - Before submitting, ensure the following variables are defined in your environment configuration:
-    API_BASE_URL   The API endpoint for the LLM.
+    API_BASE_URL   The API endpoint for the LLM (provided by validator).
+    API_KEY        The API key for the LLM proxy (provided by validator).
     MODEL_NAME     The model identifier to use for inference.
-    HF_TOKEN       Your Hugging Face / API key.
 
 - The inference script must be named `inference.py` and placed in the root directory of the project
 - Participants must use OpenAI Client for all LLM calls using above variables
@@ -32,8 +32,8 @@ import json
 import requests
 from openai import OpenAI
 
-API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY", "")
-API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+API_KEY = os.environ["API_KEY"]
+API_BASE_URL = os.environ["API_BASE_URL"]
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 BENCHMARK = "ml-experiment-triage"
