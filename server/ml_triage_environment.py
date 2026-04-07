@@ -1106,3 +1106,6 @@ class MLTriageEnvironment(Environment):
             "done": self.done,
             "total_reward": self.total_reward,
         }
+
+    def close(self):
+        pass
