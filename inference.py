@@ -34,9 +34,9 @@ import json
 import requests
 from openai import OpenAI
 
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
+API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-HF_TOKEN = os.getenv("HF_TOKEN")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 BENCHMARK = "ml-experiment-triage"
 SUCCESS_SCORE_THRESHOLD = 0.1
@@ -45,7 +45,7 @@ TEMPERATURE = 0.7
 MAX_TOKENS = 150
 EPSILON = 1e-9
 
-client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
 TASKS = [
     {"id": 1, "name": "find_best_experiment", "max_steps": MAX_STEPS},
@@ -203,6 +203,17 @@ def run_task(task: dict) -> tuple:
 
 
 if __name__ == "__main__":
+    # Mandatory test call to ensure API connection works
+    try:
+        test_resp = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[{"role": "user", "content": "Respond with just 'ok'"}],
+            max_tokens=10,
+        )
+        print(f"[LLM_TEST] {test_resp.choices[0].message.content}", flush=True)
+    except Exception as e:
+        print(f"[LLM_TEST_ERROR] {type(e).__name__}: {e}", flush=True)
+
     scores = []
     for task in TASKS:
         score = run_task(task)
