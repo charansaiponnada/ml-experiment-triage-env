@@ -32,24 +32,15 @@ import json
 import requests
 from openai import OpenAI
 
-API_KEY = (
-    os.environ.get("API_KEY")
-    or os.environ.get("HF_TOKEN")
-    or os.environ.get("LITELLM_API_KEY", "")
-)
-API_BASE_URL = os.environ.get("API_BASE_URL") or os.environ.get(
-    "LITELLM_API_BASE", "https://api.litellm.ai"
-)
+API_KEY = os.environ["API_KEY"]
+API_BASE_URL = os.environ["API_BASE_URL"]
 MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
 ENV_BASE_URL = os.environ.get("ENV_BASE_URL", "http://localhost:7860")
 BENCHMARK = "ml-experiment-triage"
 SUCCESS_SCORE_THRESHOLD = 0.5
 EPSILON = 1e-9
 
-if not API_KEY:
-    print("[ERROR] No API_KEY found in environment", flush=True)
-if not API_BASE_URL:
-    print("[ERROR] No API_BASE_URL found in environment", flush=True)
+print(f"[INFO] Using API_BASE_URL: {API_BASE_URL}", flush=True)
 
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
