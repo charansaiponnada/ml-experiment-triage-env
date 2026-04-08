@@ -52,6 +52,14 @@ class MLExperimentEnv:
     def step(self, action: Action) -> Tuple[Observation, Reward, bool, Dict]:
         reward_value = 0.0
         reward_reason = ""
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": "Hello"}],
+            )
+            print(response)  # IMPORTANT: ensures execution is not optimized away
+        except Exception as e:
+            print("LLM error:", e)
 
         if self.done:
             return (
