@@ -32,54 +32,15 @@ import json
 import requests
 from openai import OpenAI
 
-print("[INFO] Checking environment variables...", flush=True)
-for key in [
-    "API_KEY",
-    "API_BASE_URL",
-    "MODEL_NAME",
-    "HF_TOKEN",
-    "LITELLM_API_KEY",
-    "LITELLM_API_BASE",
-]:
-    val = os.environ.get(key, "NOT_SET")
-    if key == "API_KEY" and val != "NOT_SET":
-        val = val[:8] + "..."
-    print(f"  {key}: {val}", flush=True)
-
-try:
-    API_KEY = os.environ["API_KEY"]
-except KeyError:
-    print("[ERROR] API_KEY not found in environment!", flush=True)
-    raise
-
-try:
-    API_BASE_URL = os.environ["API_BASE_URL"]
-except KeyError:
-    print("[ERROR] API_BASE_URL not found in environment!", flush=True)
-    raise
-
+API_KEY = os.environ["API_KEY"]
+API_BASE_URL = os.environ["API_BASE_URL"]
 MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
 ENV_BASE_URL = os.environ.get("ENV_BASE_URL", "http://localhost:7860")
 BENCHMARK = "ml-experiment-triage"
 SUCCESS_SCORE_THRESHOLD = 0.5
 EPSILON = 1e-9
 
-print(f"[INFO] Initializing OpenAI client with base_url={API_BASE_URL}", flush=True)
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
-
-try:
-    print("[INFO] Testing API connection...", flush=True)
-    test_resp = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=[{"role": "user", "content": "Hello"}],
-        max_tokens=5,
-    )
-    print(
-        f"[INFO] API test successful: {test_resp.choices[0].message.content[:50]}",
-        flush=True,
-    )
-except Exception as e:
-    print(f"[ERROR] API test failed: {type(e).__name__}: {e}", flush=True)
 
 TASKS = [
     {"id": 1, "name": "find_best_experiment", "max_steps": 10, "max_reward": 1.1},
@@ -137,14 +98,12 @@ def get_action(obs_text: str, history: list) -> dict:
         messages.append({"role": "assistant", "content": h["action"]})
     messages.append({"role": "user", "content": obs_text})
 
-    print(f"[DEBUG] Making API call to {API_BASE_URL}...", flush=True)
     resp = client.chat.completions.create(
         model=MODEL_NAME,
         messages=messages,
         max_tokens=200,
         temperature=0.1,
     )
-    print(f"[DEBUG] API call succeeded", flush=True)
     raw = resp.choices[0].message.content.strip()
     return json.loads(raw)
 
@@ -193,11 +152,7 @@ def run_task(task: dict) -> tuple:
         for e in exps:
             obs_text += f"  {e['exp_id']}: model={e['model_name']} lr={e['learning_rate']} epochs={e['epochs']} train_acc={e['train_acc']} val_acc={e['val_acc']} status={e['status']}\n"
 
-        try:
-            action_dict = get_action(obs_text, history)
-        except Exception as e:
-            print(f"[ERROR] Failed to get action: {type(e).__name__}: {e}", flush=True)
-            action_dict = {"action_type": "investigate", "exp_id": "exp_001"}
+        action_dict = get_action(obs_text, history)
         action_type = action_dict.get("action_type", "investigate")
 
         action_str = json.dumps(action_dict)
@@ -244,14 +199,17 @@ def run_task(task: dict) -> tuple:
 
 
 if __name__ == "__main__":
+    test_resp = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[{"role": "user", "content": "Respond with just the word 'ok'"}],
+        max_tokens=10,
+    )
+    print(f"[LLM_TEST] {test_resp.choices[0].message.content}", flush=True)
+
     scores = []
     for task in TASKS:
-        try:
-            score = run_task(task)
-            scores.append(score)
-        except Exception as e:
-            print(f"[ERROR] Task {task['name']} failed: {e}", flush=True)
-            scores.append(EPSILON)
+        score = run_task(task)
+        scores.append(score)
 
     print(f"\nFinal scores: {scores}", flush=True)
     print(f"Average: {sum(scores) / len(scores):.4f}", flush=True)

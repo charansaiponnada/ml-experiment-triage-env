@@ -5,12 +5,12 @@ from app.tasks import get_task, TASKS
 import os
 from openai import OpenAI
 
+
 class MLExperimentEnv:
     def __init__(self):
         self.client = OpenAI(
-            api_key=os.environ["API_KEY"],
-            base_url=os.environ["API_BASE_URL"]
-)
+            base_url=os.environ["API_BASE_URL"], api_key=os.environ["API_KEY"]
+        )
         self.current_task = None
         self.experiments: List[ExperimentRecord] = []
         self.current_step = 0
@@ -117,14 +117,14 @@ class MLExperimentEnv:
                     You are an ML expert. Suggest best hyperparameters.
                     Experiments data: {[exp.model_dump() for exp in self.experiments]}
                     """
-                    
+
                     response = self.client.chat.completions.create(
                         model="gpt-4o-mini",
                         messages=[
                             {"role": "system", "content": "You are an ML expert."},
-                            {"role": "user", "content": prompt}
+                            {"role": "user", "content": prompt},
                         ],
-                        temperature=0.3
+                        temperature=0.3,
                     )
                     suggestion_text = response.choices[0].message.content
                     reward_value = 0.2
@@ -132,7 +132,6 @@ class MLExperimentEnv:
                 except Exception as e:
                     reward_value = -0.05
                     reward_reason = f"LLM error: {str(e)}"
-
 
             elif action.action_type == "summarize":
                 score = self.current_task.grader(
