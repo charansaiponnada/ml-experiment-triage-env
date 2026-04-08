@@ -32,7 +32,7 @@ import json
 import requests
 from openai import OpenAI
 
-print("[INFO] Environment variables:", flush=True)
+print("[INFO] Checking environment variables...", flush=True)
 for key in [
     "API_KEY",
     "API_BASE_URL",
@@ -46,16 +46,26 @@ for key in [
         val = val[:8] + "..."
     print(f"  {key}: {val}", flush=True)
 
-API_KEY = os.environ["API_KEY"]
-API_BASE_URL = os.environ["API_BASE_URL"]
+try:
+    API_KEY = os.environ["API_KEY"]
+except KeyError:
+    print("[ERROR] API_KEY not found in environment!", flush=True)
+    raise
+
+try:
+    API_BASE_URL = os.environ["API_BASE_URL"]
+except KeyError:
+    print("[ERROR] API_BASE_URL not found in environment!", flush=True)
+    raise
+
 MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
 ENV_BASE_URL = os.environ.get("ENV_BASE_URL", "http://localhost:7860")
 BENCHMARK = "ml-experiment-triage"
 SUCCESS_SCORE_THRESHOLD = 0.5
 EPSILON = 1e-9
 
+print(f"[INFO] Initializing OpenAI client with base_url={API_BASE_URL}", flush=True)
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
-print(f"[INFO] OpenAI client initialized with base_url={API_BASE_URL}", flush=True)
 
 TASKS = [
     {"id": 1, "name": "find_best_experiment", "max_steps": 10, "max_reward": 1.1},
