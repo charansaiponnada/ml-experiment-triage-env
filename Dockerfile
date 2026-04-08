@@ -2,6 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Set environment to disable web UI (only API endpoints needed)
+ENV ENABLE_WEB_INTERFACE=false
+
 # Install uv
 RUN pip install uv --no-cache-dir
 
