@@ -32,12 +32,12 @@ def grade_task_1(
                 investigated_exp_ids.add(exp_id)
 
     if summary and "exp_004" in summary:
-        return 1.0 - EPSILON
+        return _clamp_strict(0.9999)
 
     if "exp_004" in investigated_exp_ids:
         return 0.5
 
-    return EPSILON
+    return _clamp_strict(0.0001)
 
 
 def grade_task_2(
@@ -65,7 +65,7 @@ def grade_task_2(
 
 def grade_task_3(suggestion: Optional[Dict]) -> float:
     if not suggestion:
-        return EPSILON
+        return _clamp_strict(0.0001)
 
     ground_truth = {"learning_rate": 0.001, "epochs": 50, "model_name": "resnet50"}
 
@@ -81,18 +81,18 @@ def grade_task_3(suggestion: Optional[Dict]) -> float:
         correct += 1
 
     if correct >= 3:
-        return 1.0 - EPSILON
+        return _clamp_strict(0.9999)
     elif correct == 2:
         return 0.6
     elif correct == 1:
         return 0.3
     else:
-        return EPSILON
+        return _clamp_strict(0.0001)
 
 
 def grade_task_4(comparison: Optional[Dict]) -> float:
     if not comparison:
-        return EPSILON
+        return _clamp_strict(0.0001)
 
     analysis = comparison.get("analysis", "").lower()
 
@@ -112,7 +112,7 @@ def grade_task_4(comparison: Optional[Dict]) -> float:
 
 def grade_task_5(diagnosis: Optional[Dict]) -> float:
     if not diagnosis:
-        return EPSILON
+        return _clamp_strict(0.0001)
 
     exp_id = diagnosis.get("exp_id", "")
     reason = diagnosis.get("reason", "").lower()
