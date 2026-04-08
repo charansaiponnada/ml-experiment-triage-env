@@ -86,9 +86,9 @@ def grade_task_3(
     if correct == 3:
         return _clamp_strict(0.9999)
     elif correct == 2:
-        return 0.6
+        return _clamp_strict(0.6)
     elif correct == 1:
-        return 0.3
+        return _clamp_strict(0.3)
     else:
         return _clamp_strict(0.0001)
 
