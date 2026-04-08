@@ -4,27 +4,29 @@ ML Experiment Triage Inference Script
 
 MANDATORY
 - Before submitting, ensure the following variables are defined in your environment configuration:
-    API_BASE_URL   The API endpoint for the LLM (provided by validator).
-    API_KEY        The API key for the LLM proxy (provided by validator).
+    API_BASE_URL   The API endpoint for the LLM.
     MODEL_NAME     The model identifier to use for inference.
+    HF_TOKEN       Your Hugging Face / API key.
 
 - The inference script must be named `inference.py` and placed in the root directory of the project
 - Participants must use OpenAI Client for all LLM calls using above variables
 
-STDOUT FORMAT (STRICTLY REQUIRED):
+STDOUT FORMAT
+- The script must emit exactly three line types to stdout, in this order:
+
     [START] task=<task_name> env=<benchmark> model=<model_name>
     [STEP]  step=<n> action=<action_str> reward=<0.00> done=<true|false> error=<msg|null>
-    [END]   success=<true|false> steps=<n> score=<0.000> rewards=<r1,r2,...,rn>
+    [END]   success=<true|false> steps=<n> score=<score> rewards=<r1,r2,...,rn>
 
   Rules:
     - One [START] line at episode begin.
     - One [STEP] line per step, immediately after env.step() returns.
     - One [END] line after env.close(), always emitted (even on exception).
     - reward and rewards are formatted to 2 decimal places.
-    - score is formatted to 3 decimal places.
     - done and success are lowercase booleans: true or false.
     - error is the raw last_action_error string, or null if none.
     - All fields on a single line with no newlines within a line.
+    - Each tasks should return score in [0, 1]
 """
 
 import os
@@ -32,22 +34,25 @@ import json
 import requests
 from openai import OpenAI
 
-API_KEY = os.environ["API_KEY"]
-API_BASE_URL = os.environ["API_BASE_URL"]
-MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
-ENV_BASE_URL = os.environ.get("ENV_BASE_URL", "http://localhost:7860")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+HF_TOKEN = os.getenv("HF_TOKEN")
+ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 BENCHMARK = "ml-experiment-triage"
-SUCCESS_SCORE_THRESHOLD = 0.5
+SUCCESS_SCORE_THRESHOLD = 0.1
+MAX_STEPS = 8
+TEMPERATURE = 0.7
+MAX_TOKENS = 150
 EPSILON = 1e-9
 
-client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
 TASKS = [
-    {"id": 1, "name": "find_best_experiment", "max_steps": 10, "max_reward": 1.1},
-    {"id": 2, "name": "identify_overfitting", "max_steps": 15, "max_reward": 0.6},
-    {"id": 3, "name": "suggest_next_experiment", "max_steps": 20, "max_reward": 0.5},
-    {"id": 4, "name": "compare_experiments", "max_steps": 12, "max_reward": 1.0},
-    {"id": 5, "name": "debug_failed_run", "max_steps": 15, "max_reward": 1.0},
+    {"id": 1, "name": "find_best_experiment", "max_steps": MAX_STEPS},
+    {"id": 2, "name": "identify_overfitting", "max_steps": MAX_STEPS},
+    {"id": 3, "name": "suggest_next_experiment", "max_steps": MAX_STEPS},
+    {"id": 4, "name": "compare_experiments", "max_steps": MAX_STEPS},
+    {"id": 5, "name": "debug_failed_run", "max_steps": MAX_STEPS},
 ]
 
 SYSTEM_PROMPT = """You are an ML experiment analysis agent.
@@ -101,8 +106,8 @@ def get_action(obs_text: str, history: list) -> dict:
     resp = client.chat.completions.create(
         model=MODEL_NAME,
         messages=messages,
-        max_tokens=200,
-        temperature=0.1,
+        max_tokens=MAX_TOKENS,
+        temperature=TEMPERATURE,
     )
     raw = resp.choices[0].message.content.strip()
     return json.loads(raw)
@@ -112,7 +117,6 @@ def run_task(task: dict) -> tuple:
     task_id = task["id"]
     task_name = task["name"]
     max_steps = task["max_steps"]
-    max_reward = task["max_reward"]
 
     log_start(task=task_name, env=BENCHMARK, model=MODEL_NAME)
 
@@ -199,13 +203,6 @@ def run_task(task: dict) -> tuple:
 
 
 if __name__ == "__main__":
-    test_resp = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=[{"role": "user", "content": "Respond with just the word 'ok'"}],
-        max_tokens=10,
-    )
-    print(f"[LLM_TEST] {test_resp.choices[0].message.content}", flush=True)
-
     scores = []
     for task in TASKS:
         score = run_task(task)
