@@ -8,9 +8,9 @@ from openai import OpenAI
 
 class MLExperimentEnv:
     def __init__(self):
-        self.client = OpenAI(
-            base_url=os.environ["API_BASE_URL"], api_key=os.environ["API_KEY"]
-        )
+        API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY", "")
+        API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
+        self.client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
         self.current_task = None
         self.experiments: List[ExperimentRecord] = []
         self.current_step = 0
