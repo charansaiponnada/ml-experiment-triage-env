@@ -50,7 +50,7 @@ class MLExperimentEnv:
         return exp.train_acc > 0.97 and exp.val_acc is not None and exp.val_acc < 0.75
 
     def step(self, action: Action) -> Tuple[Observation, Reward, bool, Dict]:
-        reward_value = 0.0
+        reward_value = 0.0001
         reward_reason = ""
         try:
             response = self.client.chat.completions.create(
@@ -70,7 +70,7 @@ class MLExperimentEnv:
                     task_description=self.task_description,
                     feedback=self.feedback,
                 ),
-                Reward(value=0.0, reason="Episode already done"),
+                Reward(value=0.0001, reason="Episode already done"),
                 True,
                 {},
             )
@@ -78,11 +78,11 @@ class MLExperimentEnv:
         valid_action = True
 
         if action.action_type not in ["investigate", "discard", "suggest", "summarize"]:
-            reward_value = -0.05
+            reward_value = 0.0001
             reward_reason = f"Invalid action type: {action.action_type}"
             valid_action = False
         elif action.action_type in ["investigate", "discard"] and not action.exp_id:
-            reward_value = -0.05
+            reward_value = 0.0001
             reward_reason = f"Missing exp_id for action: {action.action_type}"
             valid_action = False
 
@@ -95,12 +95,12 @@ class MLExperimentEnv:
                         reward_value = 0.1
                         reward_reason = f"Successfully investigated {action.exp_id}. Details: model={exp.model_name}, lr={exp.learning_rate}, val_acc={exp.val_acc}"
                     else:
-                        reward_value = 0.0
+                        reward_value = 0.0001
                         reward_reason = (
                             f"Warning: {action.exp_id} was already investigated"
                         )
                 else:
-                    reward_value = -0.05
+                    reward_value = 0.0001
                     reward_reason = f"Experiment {action.exp_id} not found"
 
             elif action.action_type == "discard":
@@ -109,14 +109,14 @@ class MLExperimentEnv:
                     is_overfitting = self._is_overfitting(exp)
                     if is_overfitting:
                         exp.status = "discarded"
-                        reward_value = 0.05
+                        reward_value = 0.00015
                         reward_reason = f"Correctly discarded {action.exp_id} - overfitting detected (train_acc={exp.train_acc}, val_acc={exp.val_acc})"
                     else:
                         exp.status = "discarded"
                         reward_value = -0.1
                         reward_reason = f"Incorrectly discarded {action.exp_id} - it was not overfitting"
                 else:
-                    reward_value = -0.05
+                    reward_value = 0.0001
                     reward_reason = f"Experiment {action.exp_id} not found"
 
             elif action.action_type == "suggest":
@@ -138,7 +138,7 @@ class MLExperimentEnv:
                     reward_value = 0.2
                     reward_reason = f"LLM Suggestion: {suggestion_text}"
                 except Exception as e:
-                    reward_value = -0.05
+                    reward_value = 0.0001
                     reward_reason = f"LLM error: {str(e)}"
 
             elif action.action_type == "summarize":
@@ -166,7 +166,7 @@ class MLExperimentEnv:
 
         if self.current_step >= self.max_steps and not self.done:
             self.done = True
-            reward_value = 0.0
+            reward_value = 0.0001
             reward_reason = "Max steps reached. Episode ended."
 
         if action.action_type != "summarize" and not self.done:
