@@ -2,9 +2,6 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Set environment to disable web UI (only API endpoints needed)
-ENV ENABLE_WEB_INTERFACE=false
-
 # Install uv
 RUN pip install uv --no-cache-dir
 
@@ -13,6 +10,7 @@ RUN uv pip install --system fastapi openai openenv-core pydantic pyyaml uvicorn 
 
 # Copy application code
 COPY server/ ./server/
+COPY app/ ./app/
 COPY models.py ./
 COPY pyproject.toml ./
 COPY openenv.yaml ./
@@ -24,4 +22,4 @@ USER user
 
 EXPOSE 7860
 
-CMD ["python", "-c", "from server.app import main; main()"]
+CMD ["python", "-c", "from app.main import app; import uvicorn; uvicorn.run(app, host='0.0.0.0', port=7860)"]

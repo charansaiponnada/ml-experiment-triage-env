@@ -110,7 +110,19 @@ def get_action(obs_text: str, history: list) -> dict:
         temperature=TEMPERATURE,
     )
     raw = resp.choices[0].message.content.strip()
-    return json.loads(raw)
+
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        import re
+
+        json_match = re.search(r"\{[^{}]*\}", raw)
+        if json_match:
+            try:
+                return json.loads(json_match.group())
+            except:
+                pass
+        return {"action_type": "investigate", "exp_id": "exp_001"}
 
 
 def run_task(task: dict) -> tuple:
