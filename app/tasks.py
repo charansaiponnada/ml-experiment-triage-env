@@ -35,7 +35,7 @@ def grade_task_1(
         return _clamp_strict(0.0001)
 
     if "exp_004" in investigated_exp_ids:
-        return 0.5
+        return _clamp_strict(0.5)
 
     return _clamp_strict(0.0001)
 
@@ -128,3 +128,4 @@ def get_task(task_id: int) -> Task:
         if task.task_id == task_id:
             return task
     raise ValueError(f"Task {task_id} not found")
+
