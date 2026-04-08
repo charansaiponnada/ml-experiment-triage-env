@@ -35,7 +35,7 @@ def grade_task_1(
         return _clamp_strict(0.9999)
 
     if "exp_004" in investigated_exp_ids:
-        return 0.5
+        return _clamp_strict(0.5)
 
     return _clamp_strict(0.0001)
 
@@ -83,9 +83,9 @@ def grade_task_3(suggestion: Optional[Dict]) -> float:
     if correct >= 3:
         return _clamp_strict(0.9999)
     elif correct == 2:
-        return 0.6
+        return _clamp_strict(0.6)
     elif correct == 1:
-        return 0.3
+        return _clamp_strict(0.3)
     else:
         return _clamp_strict(0.0001)
 
@@ -1047,7 +1047,7 @@ class MLTriageEnvironment(Environment):
                 elif self.task_id == 5:
                     score = self.current_task.grader(None, None, action.diagnosis)
                 else:
-                    score = 0.0
+                    score = EPSILON
 
                 reward_value = score
                 if score >= 1.0:
@@ -1071,7 +1071,7 @@ class MLTriageEnvironment(Environment):
 
         if self.current_step >= self.max_steps and not self.done:
             self.done = True
-            reward_value = 0.0
+            reward_value = EPSILON
             reward_reason = "Max steps reached. Episode ended."
 
         if action.action_type != "summarize" and not self.done:
