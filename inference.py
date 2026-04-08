@@ -67,6 +67,20 @@ EPSILON = 1e-9
 print(f"[INFO] Initializing OpenAI client with base_url={API_BASE_URL}", flush=True)
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
+try:
+    print("[INFO] Testing API connection...", flush=True)
+    test_resp = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=[{"role": "user", "content": "Hello"}],
+        max_tokens=5,
+    )
+    print(
+        f"[INFO] API test successful: {test_resp.choices[0].message.content[:50]}",
+        flush=True,
+    )
+except Exception as e:
+    print(f"[ERROR] API test failed: {type(e).__name__}: {e}", flush=True)
+
 TASKS = [
     {"id": 1, "name": "find_best_experiment", "max_steps": 10, "max_reward": 1.1},
     {"id": 2, "name": "identify_overfitting", "max_steps": 15, "max_reward": 0.6},
@@ -123,18 +137,16 @@ def get_action(obs_text: str, history: list) -> dict:
         messages.append({"role": "assistant", "content": h["action"]})
     messages.append({"role": "user", "content": obs_text})
 
-    try:
-        resp = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=messages,
-            max_tokens=200,
-            temperature=0.1,
-        )
-        raw = resp.choices[0].message.content.strip()
-        return json.loads(raw)
-    except Exception as e:
-        print(f"[ERROR] API call failed: {type(e).__name__}: {e}", flush=True)
-        return {"action_type": "investigate", "exp_id": "exp_001"}
+    print(f"[DEBUG] Making API call to {API_BASE_URL}...", flush=True)
+    resp = client.chat.completions.create(
+        model=MODEL_NAME,
+        messages=messages,
+        max_tokens=200,
+        temperature=0.1,
+    )
+    print(f"[DEBUG] API call succeeded", flush=True)
+    raw = resp.choices[0].message.content.strip()
+    return json.loads(raw)
 
 
 def run_task(task: dict) -> tuple:
@@ -181,7 +193,11 @@ def run_task(task: dict) -> tuple:
         for e in exps:
             obs_text += f"  {e['exp_id']}: model={e['model_name']} lr={e['learning_rate']} epochs={e['epochs']} train_acc={e['train_acc']} val_acc={e['val_acc']} status={e['status']}\n"
 
-        action_dict = get_action(obs_text, history)
+        try:
+            action_dict = get_action(obs_text, history)
+        except Exception as e:
+            print(f"[ERROR] Failed to get action: {type(e).__name__}: {e}", flush=True)
+            action_dict = {"action_type": "investigate", "exp_id": "exp_001"}
         action_type = action_dict.get("action_type", "investigate")
 
         action_str = json.dumps(action_dict)
