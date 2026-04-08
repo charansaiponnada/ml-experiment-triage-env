@@ -45,6 +45,11 @@ TEMPERATURE = 0.3
 MAX_TOKENS = 200
 EPSILON = 1e-9
 
+
+def _clamp_strict(value: float) -> float:
+    return max(EPSILON, min(1.0 - EPSILON, value))
+
+
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
 TASKS = [
@@ -216,7 +221,8 @@ def run_task(task: dict) -> tuple:
             success = reward_val >= SUCCESS_SCORE_THRESHOLD
             break
 
-    score = min(max(sum(rewards), EPSILON), 1.0 - EPSILON)
+    score = reward_val if rewards else EPSILON
+    score = _clamp_strict(score)
 
     log_end(success=success, steps=steps, score=score, rewards=rewards)
     return score

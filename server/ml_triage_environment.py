@@ -60,7 +60,7 @@ def grade_task_2(
 
     score = (correct_discards / 3.0) - (wrong_discards * 0.1)
 
-    return _clamp_strict(score)
+    return _clamp_strict(max(0.1, score))
 
 
 def grade_task_3(suggestion: Optional[Dict]) -> float:
@@ -96,7 +96,7 @@ def grade_task_4(comparison: Optional[Dict]) -> float:
 
     analysis = comparison.get("analysis", "").lower()
 
-    score = 0.0
+    score = EPSILON
 
     if "exp_004" in analysis:
         score += 0.4
@@ -118,7 +118,7 @@ def grade_task_5(diagnosis: Optional[Dict]) -> float:
     reason = diagnosis.get("reason", "").lower()
     fix = diagnosis.get("fix", "").lower()
 
-    score = 0.0
+    score = EPSILON
 
     if exp_id == "exp_005":
         if "learning rate" in reason or "lr" in reason:
@@ -1028,7 +1028,7 @@ class MLTriageEnvironment(Environment):
                     reason = action.diagnosis.get("reason", "")
                     reward_reason = f"Diagnosing {exp_id}: {reason[:50]}"
                 else:
-                    reward_value = -0.05
+                    reward_value = EPSILON
                     reward_reason = "Missing diagnosis data"
 
             elif action.action_type == "summarize":
