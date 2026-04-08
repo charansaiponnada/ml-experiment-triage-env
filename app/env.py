@@ -2,10 +2,15 @@ from typing import Dict, List, Any, Optional, Tuple
 from app.models import ExperimentRecord, Action, Observation, Reward
 from app.data import generate_experiments
 from app.tasks import get_task, TASKS
-
+import os
+from openai import OpenAI
 
 class MLExperimentEnv:
     def __init__(self):
+        self.client = OpenAI(
+            api_key=os.environ["API_KEY"],
+            base_url=os.environ["API_BASE_URL"]
+)
         self.current_task = None
         self.experiments: List[ExperimentRecord] = []
         self.current_step = 0
@@ -107,44 +112,27 @@ class MLExperimentEnv:
                     reward_reason = f"Experiment {action.exp_id} not found"
 
             elif action.action_type == "suggest":
-                if action.suggestion:
-                    ground_truth = {
-                        "learning_rate": 0.001,
-                        "epochs": 50,
-                        "model_name": "resnet50",
-                    }
-                    suggestion = action.suggestion
-                    correct = 0
-
-                    if suggestion.get("learning_rate") == ground_truth["learning_rate"]:
-                        correct += 1
-                    if suggestion.get("epochs") == ground_truth["epochs"]:
-                        correct += 1
-                    if (
-                        suggestion.get("model") == ground_truth["model_name"]
-                        or suggestion.get("model_name") == ground_truth["model_name"]
-                    ):
-                        correct += 1
-
-                    if correct == 3:
-                        reward_value = 0.5
-                        reward_reason = (
-                            "Excellent suggestion! Matches ground truth exactly."
-                        )
-                    elif correct == 2:
-                        reward_value = 0.35
-                        reward_reason = (
-                            "Good suggestion. Partially matches ground truth."
-                        )
-                    elif correct == 1:
-                        reward_value = 0.15
-                        reward_reason = "Partial suggestion. Some fields match."
-                    else:
-                        reward_value = 0.0
-                        reward_reason = "Suggestion does not match ground truth well."
-                else:
+                try:
+                    prompt = f"""
+                    You are an ML expert. Suggest best hyperparameters.
+                    Experiments data: {[exp.model_dump() for exp in self.experiments]}
+                    """
+                    
+                    response = self.client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[
+                            {"role": "system", "content": "You are an ML expert."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=0.3
+                    )
+                    suggestion_text = response.choices[0].message.content
+                    reward_value = 0.2
+                    reward_reason = f"LLM Suggestion: {suggestion_text}"
+                except Exception as e:
                     reward_value = -0.05
-                    reward_reason = "Missing suggestion data"
+                    reward_reason = f"LLM error: {str(e)}"
+
 
             elif action.action_type == "summarize":
                 score = self.current_task.grader(
