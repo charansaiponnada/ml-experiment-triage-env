@@ -60,7 +60,7 @@ def health():
 def reset(request: ResetRequest = ResetRequest()):
     if request.task_id not in [t.task_id for t in TASKS]:
         raise HTTPException(
-            status_code=400, detail=f"Invalid task_id. Must be 1, 2, or 3."
+            status_code=400, detail=f"Invalid task_id. Must be 1, 2, 3, 4, or 5."
         )
     return env.reset(request.task_id)
 

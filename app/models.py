@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 
 
 class ExperimentRecord(BaseModel):
@@ -18,8 +18,10 @@ class ExperimentRecord(BaseModel):
 class Action(BaseModel):
     action_type: str
     exp_id: Optional[str] = None
-    suggestion: Optional[Dict] = None
+    suggestion: Optional[Dict[str, Any]] = None
     summary: Optional[str] = None
+    comparison: Optional[Dict[str, Any]] = None
+    diagnosis: Optional[Dict[str, Any]] = None
 
 
 class Observation(BaseModel):

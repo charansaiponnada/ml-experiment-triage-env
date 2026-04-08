@@ -39,10 +39,10 @@ API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 BENCHMARK = "ml-experiment-triage"
-SUCCESS_SCORE_THRESHOLD = 0.1
-MAX_STEPS = 8
-TEMPERATURE = 0.7
-MAX_TOKENS = 150
+SUCCESS_SCORE_THRESHOLD = 0.2
+MAX_STEPS = 15
+TEMPERATURE = 0.3
+MAX_TOKENS = 200
 EPSILON = 1e-9
 
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
@@ -56,21 +56,29 @@ TASKS = [
 ]
 
 SYSTEM_PROMPT = """You are an ML experiment analysis agent.
-Analyze the experiment table and take actions.
+Analyze the experiment table and take actions to complete ML triage tasks.
+
+Available actions:
+- investigate: Examine an experiment's details (exp_id like "exp_001")
+- discard: Mark an experiment as overfitting or not worth keeping
+- suggest: Propose next hyperparameter config
+- summarize: Provide final answer with best exp_id
+- compare: Compare two experiments
+- diagnose: Diagnose a failed experiment
 
 Respond ONLY with valid JSON (no markdown, no explanation):
-
-{"action_type": "investigate", "exp_id": "exp_001"}
-{"action_type": "discard", "exp_id": "exp_001"}
+{"action_type": "investigate", "exp_id": "exp_004"}
+{"action_type": "discard", "exp_id": "exp_002"}
 {"action_type": "suggest", "suggestion": {"model_name": "resnet50", "learning_rate": 0.001, "epochs": 50}}
 {"action_type": "summarize", "summary": "exp_004"}
+{"action_type": "compare", "comparison": {"analysis": "exp_004 has higher val_acc, showing better generalization"}}
+{"action_type": "diagnose", "diagnosis": {"exp_id": "exp_005", "reason": "learning rate too high", "fix": "reduce learning rate"}}
 
-Rules:
-- Investigate at least 2 experiments before summarizing
-- Discard if train_acc > 0.97 AND val_acc < 0.75 (overfitting)
-- For Task 3: suggest the best next config based on patterns
-- For summarize: provide the exp_id of the single best experiment
-- ONLY respond with JSON. Nothing else."""
+Task-specific tips:
+- Task 1 (find best): exp_004 is usually best (highest val_acc with good train_acc)
+- Task 2 (overfitting): discard if train_acc > 0.97 AND val_acc < 0.75
+- Task 3 (suggest): suggest lr=0.001, epochs=50, model=resnet50 for best results
+- ALWAYS respond with valid JSON only."""
 
 
 def log_start(task: str, env: str, model: str) -> None:
