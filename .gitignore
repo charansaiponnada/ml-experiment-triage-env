@@ -3,3 +3,10 @@ __pycache__/
 .venv/
 *.egg-info/
 .env
+*.pdf
+*.png
+*.jpg
+*.gif
+*.zip
+*.tar.gz
+docs/*.synctex.gz

@@ -14,8 +14,6 @@ tags:
 
 [![GitHub](https://img.shields.io/badge/GitHub-View%20Source-blue?style=flat-square&logo=github)](https://github.com/charansaiponnada/ml-experiment-triage-env)
 
-![UI Preview](preview.png)
-
 # ML Experiment Triage Environment
 
 An OpenEnv-compliant RL environment where an AI agent triages ML experiment results — identifying best runs, detecting overfitting, and suggesting next hyperparameter configurations.
