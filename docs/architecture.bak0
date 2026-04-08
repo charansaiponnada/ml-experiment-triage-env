@@ -1,0 +1,70 @@
+\documentclass[tikz,border=10pt]{standalone}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning, calc, shadows.blur}
+
+\begin{document}
+
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    every node/.style={align=center, minimum width=2.5cm},
+    box/.style={rectangle, draw, rounded corners, blur shadow={shadow blur steps=5}, minimum height=1.2cm},
+    arrow/.style={->, thick, >=stealth},
+    external/.style={rectangle, draw, dashed, rounded corners, blue},
+    internal/.style={rectangle, draw, fill=blue!10, rounded corners},
+    ui/.style={rectangle, draw, fill=green!10, rounded corners},
+    api/.style={rectangle, draw, fill=orange!10, rounded corners},
+]
+
+% Title
+\node[font=\Large\bfseries, minimum width=15cm] at (0, -8) {ML Experiment Triage Environment - Architecture};
+
+% External Components
+\node[external, label={User}] (user) at (-6, 0) {User};
+
+\node[external, label={HuggingFace\\Space}] (hf) at (0, 0) {HuggingFace\\Space};
+
+\node[external, label={LiteLLM\\Proxy}] (litellm) at (6, -3) {LiteLLM\\Proxy};
+
+\node[external, label={LLM\\Provider}] (llm) at (9, -3) {LLM\\Provider};
+
+% Internal Components
+\node[internal] (docker) at (0, 2) {Docker\\Container};
+
+\node[api] (fastapi) at (-2.5, 0) {FastAPI\\Server};
+
+\node[ui] (gradio) at (-5, 0) {Gradio\\UI};
+
+\node[box] (env) at (2.5, 0) {MLTriage\\Environment};
+
+\node[box] (grader) at (5, 0) {Grader\\Module};
+
+\node[box] (inference) at (2.5, 3) {inference.py\\Agent};
+
+\node[box] (data) at (5, 2) {Experiment\\Data};
+
+% Connections
+\draw[arrow] (user) -- node[above] {HTTP} (gradio);
+\draw[arrow] (gradio) -- (fastapi);
+\draw[arrow] (fastapi) -- (env);
+\draw[arrow] (env) -- (grader);
+\draw[arrow] (grader) -- (fastapi);
+\draw[arrow] (inference) -- node[right] {POST /reset} (fastapi);
+\draw[arrow] (fastapi) -- node[left] {Observation} (inference);
+\draw[arrow] (inference) -- node[above] {chat.completions} (litellm);
+\draw[arrow] (litellm) -- (llm);
+\draw[arrow, dashed] (env) -- (data);
+
+% Legend
+\node[legend, right] at (8, 3) {
+    \begin{tabular}{cl}
+        \tikz\draw[internal] (0,0) rectangle (0.5,0.2); & Internal Module \\
+        \tikz\draw[api] (0,0) rectangle (0.5,0.2); & API Endpoint \\
+        \tikz\draw[ui] (0,0) rectangle (0.5,0.2); & User Interface \\
+        \tikz\draw[external, dashed] (0,0) rectangle (0.5,0.2); & External Service \\
+    \end{tabular}
+};
+
+\end{tikzpicture}
+
+\end{document}
