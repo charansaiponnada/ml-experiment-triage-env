@@ -32,6 +32,20 @@ import json
 import requests
 from openai import OpenAI
 
+print("[INFO] Environment variables:", flush=True)
+for key in [
+    "API_KEY",
+    "API_BASE_URL",
+    "MODEL_NAME",
+    "HF_TOKEN",
+    "LITELLM_API_KEY",
+    "LITELLM_API_BASE",
+]:
+    val = os.environ.get(key, "NOT_SET")
+    if key == "API_KEY" and val != "NOT_SET":
+        val = val[:8] + "..."
+    print(f"  {key}: {val}", flush=True)
+
 API_KEY = os.environ["API_KEY"]
 API_BASE_URL = os.environ["API_BASE_URL"]
 MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
@@ -40,9 +54,8 @@ BENCHMARK = "ml-experiment-triage"
 SUCCESS_SCORE_THRESHOLD = 0.5
 EPSILON = 1e-9
 
-print(f"[INFO] Using API_BASE_URL: {API_BASE_URL}", flush=True)
-
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+print(f"[INFO] OpenAI client initialized with base_url={API_BASE_URL}", flush=True)
 
 TASKS = [
     {"id": 1, "name": "find_best_experiment", "max_steps": 10, "max_reward": 1.1},
