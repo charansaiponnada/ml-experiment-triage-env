@@ -90,6 +90,56 @@ def grade_task_3(suggestion: Optional[Dict]) -> float:
         return _clamp_strict(0.01)
 
 
+def grade_task_4(comparison: Optional[Dict]) -> float:
+    if not comparison:
+        return _clamp_strict(0.01)
+
+    analysis = str(comparison.get("analysis", "")).lower()
+
+    score = 0.1
+    if "exp_004" in analysis:
+        score += 0.4
+    if "validation" in analysis or "val_acc" in analysis:
+        score += 0.2
+    if "generalization" in analysis:
+        score += 0.2
+    if "tradeoff" in analysis or "trade-off" in analysis:
+        score += 0.1
+
+    return _clamp_strict(score)
+
+
+def grade_task_5(diagnosis: Optional[Dict]) -> float:
+    if not diagnosis:
+        return _clamp_strict(0.01)
+
+    exp_id = str(diagnosis.get("exp_id", "")).lower()
+    reason = str(diagnosis.get("reason", "")).lower()
+    fix = str(diagnosis.get("fix", "").lower())
+
+    score = 0.1
+
+    if exp_id == "exp_005":
+        if "learning rate" in reason or "lr" in reason:
+            score += 0.35
+        if "high" in reason or "too high" in reason:
+            score += 0.1
+        if "reduce" in fix or "lower" in fix:
+            score += 0.1
+    elif exp_id == "exp_008":
+        if "memory" in reason or "oom" in reason or "gpu" in reason:
+            score += 0.35
+        if "batch" in reason:
+            score += 0.1
+    elif exp_id == "exp_003":
+        if "plateau" in reason or "schedule" in reason:
+            score += 0.35
+        if "lr" in fix or "decay" in fix:
+            score += 0.1
+
+    return _clamp_strict(score)
+
+
 TASK_1 = Task(
     task_id=1,
     name="find_best_experiment",
@@ -117,7 +167,25 @@ TASK_3 = Task(
     grader=grade_task_3,
 )
 
-TASKS = [TASK_1, TASK_2, TASK_3]
+TASK_4 = Task(
+    task_id=4,
+    name="compare_experiments",
+    description="Compare two experiments and explain the tradeoffs between them. Identify which is better for production use.",
+    difficulty="medium",
+    max_steps=12,
+    grader=grade_task_4,
+)
+
+TASK_5 = Task(
+    task_id=5,
+    name="debug_failed_run",
+    description="Diagnose why certain experiments failed or underperformed. Identify the root cause and suggest a fix.",
+    difficulty="hard",
+    max_steps=15,
+    grader=grade_task_5,
+)
+
+TASKS = [TASK_1, TASK_2, TASK_3, TASK_4, TASK_5]
 
 
 def get_task(task_id: int) -> Task:
@@ -502,6 +570,206 @@ def generate_experiments(task_id: int):
             ),
         ]
 
+    elif task_id == 4:
+        return [
+            ExperimentRecord(
+                exp_id="exp_001",
+                model_name="resnet18",
+                learning_rate=0.01,
+                epochs=20,
+                train_acc=0.89,
+                val_acc=0.71,
+                train_loss=0.33,
+                val_loss=0.81,
+                notes="baseline - fast but lower val accuracy",
+                status="pending",
+            ),
+            ExperimentRecord(
+                exp_id="exp_002",
+                model_name="resnet18",
+                learning_rate=0.005,
+                epochs=30,
+                train_acc=0.92,
+                val_acc=0.78,
+                train_loss=0.24,
+                val_loss=0.65,
+                notes="more epochs - balanced",
+                status="pending",
+            ),
+            ExperimentRecord(
+                exp_id="exp_003",
+                model_name="resnet34",
+                learning_rate=0.001,
+                epochs=40,
+                train_acc=0.94,
+                val_acc=0.82,
+                train_loss=0.18,
+                val_loss=0.52,
+                notes="deeper model - good results",
+                status="pending",
+            ),
+            ExperimentRecord(
+                exp_id="exp_004",
+                model_name="resnet50",
+                learning_rate=0.001,
+                epochs=50,
+                train_acc=0.95,
+                val_acc=0.89,
+                train_loss=0.15,
+                val_loss=0.38,
+                notes="BEST - best val_acc, great generalization",
+                status="pending",
+            ),
+            ExperimentRecord(
+                exp_id="exp_005",
+                model_name="resnet18",
+                learning_rate=0.02,
+                epochs=15,
+                train_acc=0.85,
+                val_acc=0.68,
+                train_loss=0.40,
+                val_loss=0.90,
+                notes="higher lr - faster but less stable",
+                status="pending",
+            ),
+            ExperimentRecord(
+                exp_id="exp_006",
+                model_name="resnet18",
+                learning_rate=0.005,
+                epochs=25,
+                train_acc=0.91,
+                val_acc=0.76,
+                train_loss=0.26,
+                val_loss=0.68,
+                notes="slightly overfitting",
+                status="pending",
+            ),
+            ExperimentRecord(
+                exp_id="exp_007",
+                model_name="resnet50",
+                learning_rate=0.002,
+                epochs=60,
+                train_acc=0.98,
+                val_acc=0.68,
+                train_loss=0.05,
+                val_loss=0.95,
+                notes="HIGH TRAIN - potential overfitting",
+                status="pending",
+            ),
+            ExperimentRecord(
+                exp_id="exp_008",
+                model_name="resnet34",
+                learning_rate=0.003,
+                epochs=35,
+                train_acc=0.93,
+                val_acc=0.80,
+                train_loss=0.20,
+                val_loss=0.55,
+                notes="good tradeoff",
+                status="pending",
+            ),
+        ]
+
+    elif task_id == 5:
+        return [
+            ExperimentRecord(
+                exp_id="exp_001",
+                model_name="resnet18",
+                learning_rate=0.01,
+                epochs=20,
+                train_acc=0.89,
+                val_acc=0.71,
+                train_loss=0.33,
+                val_loss=0.81,
+                notes="normal completion",
+                status="pending",
+            ),
+            ExperimentRecord(
+                exp_id="exp_002",
+                model_name="resnet18",
+                learning_rate=0.005,
+                epochs=30,
+                train_acc=0.92,
+                val_acc=0.78,
+                train_loss=0.24,
+                val_loss=0.65,
+                notes="normal completion",
+                status="pending",
+            ),
+            ExperimentRecord(
+                exp_id="exp_003",
+                model_name="resnet18",
+                learning_rate=0.001,
+                epochs=50,
+                train_acc=0.88,
+                val_acc=0.87,
+                train_loss=0.35,
+                val_loss=0.36,
+                notes="plateaued early - needed LR schedule",
+                status="pending",
+            ),
+            ExperimentRecord(
+                exp_id="exp_004",
+                model_name="resnet50",
+                learning_rate=0.001,
+                epochs=50,
+                train_acc=0.95,
+                val_acc=0.89,
+                train_loss=0.15,
+                val_loss=0.38,
+                notes="best performing - no issues",
+                status="pending",
+            ),
+            ExperimentRecord(
+                exp_id="exp_005",
+                model_name="resnet18",
+                learning_rate=0.1,
+                epochs=10,
+                train_acc=0.0,
+                val_acc=0.0,
+                train_loss=0.0,
+                val_loss=0.0,
+                notes="FAILED - NaN loss, lr too high",
+                status="failed",
+            ),
+            ExperimentRecord(
+                exp_id="exp_006",
+                model_name="resnet18",
+                learning_rate=0.005,
+                epochs=30,
+                train_acc=0.93,
+                val_acc=0.74,
+                train_loss=0.22,
+                val_loss=0.72,
+                notes="slight overfitting",
+                status="pending",
+            ),
+            ExperimentRecord(
+                exp_id="exp_007",
+                model_name="resnet50",
+                learning_rate=0.002,
+                epochs=60,
+                train_acc=0.96,
+                val_acc=0.70,
+                train_loss=0.12,
+                val_loss=0.88,
+                notes="overfitting - val dropped",
+                status="pending",
+            ),
+            ExperimentRecord(
+                exp_id="exp_008",
+                model_name="resnet34",
+                learning_rate=0.005,
+                epochs=100,
+                train_acc=0.0,
+                val_acc=0.0,
+                train_loss=0.0,
+                val_loss=0.0,
+                notes="FAILED - OOM, batch size too large",
+                status="failed",
+            ),
+        ]
+
     return []
 
 
@@ -640,7 +908,14 @@ class MLTriageEnvironment(Environment):
 
         valid_action = True
 
-        if action.action_type not in ["investigate", "discard", "suggest", "summarize"]:
+        if action.action_type not in [
+            "investigate",
+            "discard",
+            "suggest",
+            "summarize",
+            "compare",
+            "diagnose",
+        ]:
             reward_value = _clamp_strict(-0.05)
             reward_reason = f"Invalid action type: {action.action_type}"
             valid_action = False
@@ -722,6 +997,22 @@ class MLTriageEnvironment(Environment):
                     reward_value = _clamp_strict(-0.05)
                     reward_reason = "Missing suggestion data"
 
+            elif action.action_type == "compare":
+                if action.comparison:
+                    reward_value = _clamp_strict(0.15)
+                    reward_reason = "Comparison received and analyzed."
+                else:
+                    reward_value = _clamp_strict(-0.05)
+                    reward_reason = "Missing comparison data"
+
+            elif action.action_type == "diagnose":
+                if action.diagnosis:
+                    reward_value = _clamp_strict(0.15)
+                    reward_reason = "Diagnosis received and analyzed."
+                else:
+                    reward_value = _clamp_strict(-0.05)
+                    reward_reason = "Missing diagnosis data"
+
             elif action.action_type == "summarize":
                 if self.task_id == 1:
                     score = self.current_task.grader(
@@ -731,8 +1022,14 @@ class MLTriageEnvironment(Environment):
                     score = self.current_task.grader(
                         self.experiments, self.episode_history, action.exp_id
                     )
+                elif self.task_id == 3:
+                    score = self.current_task.grader(action.suggestion)
+                elif self.task_id == 4:
+                    score = self.current_task.grader(action.comparison)
+                elif self.task_id == 5:
+                    score = self.current_task.grader(action.diagnosis)
                 else:
-                    score = self.current_task.grader(None, None, action.suggestion)
+                    score = 0.0
 
                 reward_value = _clamp_strict(score)
                 if score >= 1.0:

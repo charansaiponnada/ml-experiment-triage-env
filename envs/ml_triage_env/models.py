@@ -21,6 +21,8 @@ class MLTriageAction(Action):
     exp_id: Optional[str] = None
     suggestion: Optional[Dict[str, Any]] = None
     summary: Optional[str] = None
+    comparison: Optional[Dict[str, Any]] = None
+    diagnosis: Optional[Dict[str, Any]] = None
     serialized_state: Optional[Dict[str, Any]] = None
 
 
