@@ -439,6 +439,14 @@
             <div class="task-list" id="task-list">
                 <!-- Tasks injected here -->
             </div>
+
+            <h3 class="nav-label" style="margin-top: 32px;">Support</h3>
+            <div class="task-list">
+                <div class="task-item" id="nav-guide" onclick="showGuide()">
+                    <h4>How to Use</h4>
+                    <span class="badge" style="border-color: var(--primary); color: var(--primary);">Guide</span>
+                </div>
+            </div>
         </nav>
 
         <div style="margin-top: auto;">
@@ -468,7 +476,84 @@
             <button class="btn btn-primary" onclick="playAgain()" style="width: auto; padding: 16px 64px;">Restart Session</button>
         </div>
 
-        <div class="dashboard-header">
+        <!-- Walkthrough Guide Section -->
+        <div id="guide-section" style="display: none;">
+            <div class="dashboard-header">
+                <div class="welcome">
+                    <h2>Platform Guide // Walkthrough</h2>
+                    <p>Learn how to navigate the ML Triage environment and optimize your experiment analysis.</p>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card" style="grid-column: span 3;">
+                    <h4 style="margin-bottom: 24px; font-size: 18px; border-bottom: 2px solid #000; padding-bottom: 8px; width: fit-content;">01. MISSION_OVERVIEW</h4>
+                    <p style="line-height: 1.8; margin-bottom: 16px;">You are an ML Triage Specialist. Your goal is to analyze a set of experiments, identify the best configurations, and diagnose failures using the available action engine.</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 32px;">
+                        <div style="border: 2px solid #000; padding: 16px;">
+                            <h5 style="font-weight: 800; margin-bottom: 8px;">STEP_ONE</h5>
+                            <p style="font-size: 11px; color: var(--text-dim);">Select a task from the sidebar. Each task has different objectives: finding best runs, identifying overfitting, or suggesting next-gen parameters.</p>
+                        </div>
+                        <div style="border: 2px solid #000; padding: 16px;">
+                            <h5 style="font-weight: 800; margin-bottom: 8px;">STEP_TWO</h5>
+                            <p style="font-size: 11px; color: var(--text-dim);">Use the 'Investigate' action to unlock detailed logs for specific experiments. Check the reward trace to see if your actions are optimal.</p>
+                        </div>
+                        <div style="border: 2px solid #000; padding: 16px;">
+                            <h5 style="font-weight: 800; margin-bottom: 8px;">STEP_THREE</h5>
+                            <p style="font-size: 11px; color: var(--text-dim);">Finalize the episode by submitting the best Experiment ID. Your performance is graded based on accuracy and efficiency.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-layout">
+                <div class="table-section">
+                    <h4>Action Dictionary</h4>
+                    <table style="margin-top: 16px;">
+                        <tr style="background: #f8fafc;">
+                            <th style="width: 120px;">Command</th>
+                            <th>Description</th>
+                            <th>Reward Impact</th>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 800;">INVESTIGATE</td>
+                            <td>Retrieves detailed training/validation metrics for a specific ID.</td>
+                            <td>Small Positive (+)</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 800;">DISCARD</td>
+                            <td>Removes an overfitting or failed run from the active pool.</td>
+                            <td>Contextual (+/-)</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 800;">SUGGEST</td>
+                            <td>Proposes a new hyperparameter config based on existing patterns.</td>
+                            <td>High Potential (++)</td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 800;">SUMMARIZE</td>
+                            <td>Closes the session with your final answer.</td>
+                            <td>Final Score Only</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="panel-card">
+                    <h4>Pro Tips</h4>
+                    <ul style="font-size: 11px; line-height: 2; padding-left: 16px;">
+                        <li>● Monitor the <strong>Step Counter</strong>; exceeding max steps ends the session.</li>
+                        <li>● Watch for the <strong>(!)</strong> icon; it indicates a large train-validation accuracy gap.</li>
+                        <li>● Rewards are real-time feedback on your analysis quality.</li>
+                    </ul>
+                    <button class="btn btn-primary" style="margin-top: 24px;" onclick="showDashboard()">Back to Console</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard-content">
+            <div class="dashboard-header">
             <div class="welcome">
                 <h2 id="task-title">Initializing...</h2>
                 <p id="task-desc">Choose a benchmark from the sidebar to begin processing experiment data.</p>
