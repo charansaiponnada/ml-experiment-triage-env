@@ -886,6 +886,24 @@
         function playAgain() {
             if (currentTaskId) selectTask(currentTaskId);
         }
+
+        function showGuide() {
+            document.getElementById('dashboard-content').style.display = 'none';
+            document.getElementById('guide-section').style.display = 'block';
+            document.querySelectorAll('.task-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('nav-guide').classList.add('active');
+        }
+
+        function showDashboard() {
+            document.getElementById('dashboard-content').style.display = 'block';
+            document.getElementById('guide-section').style.display = 'none';
+            document.getElementById('nav-guide').classList.remove('active');
+            if (currentTaskId) {
+                document.querySelectorAll('.task-item').forEach(el => {
+                    if (parseInt(el.dataset.taskId) === currentTaskId) el.classList.add('active');
+                });
+            }
+        }
     </script>
 </body>
 </html>
