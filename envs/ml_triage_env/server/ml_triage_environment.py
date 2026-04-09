@@ -4,6 +4,12 @@ from openenv_core import Environment
 from pydantic import BaseModel
 import json
 
+EPSILON = 0.001
+
+
+def _clamp_strict(value: float) -> float:
+    return max(EPSILON, min(1.0 - EPSILON, value))
+
 
 @dataclass
 class Task:
@@ -26,12 +32,12 @@ def grade_task_1(
                 investigated_exp_ids.add(exp_id)
 
     if summary and "exp_004" in summary:
-        return 1.0
+        return _clamp_strict(0.99)
 
     if "exp_004" in investigated_exp_ids:
-        return 0.5
+        return _clamp_strict(0.5)
 
-    return 0.0
+    return _clamp_strict(0.01)
 
 
 def grade_task_2(
@@ -54,12 +60,12 @@ def grade_task_2(
 
     score = (correct_discards / 3.0) - (wrong_discards * 0.1)
 
-    return max(0.0, min(1.0, score))
+    return _clamp_strict(score)
 
 
 def grade_task_3(suggestion: Optional[Dict]) -> float:
     if not suggestion:
-        return 0.0
+        return _clamp_strict(0.01)
 
     ground_truth = {"learning_rate": 0.001, "epochs": 50, "model_name": "resnet50"}
 
@@ -75,13 +81,13 @@ def grade_task_3(suggestion: Optional[Dict]) -> float:
         correct += 1
 
     if correct >= 3:
-        return 1.0
+        return _clamp_strict(0.99)
     elif correct == 2:
-        return 0.6
+        return _clamp_strict(0.6)
     elif correct == 1:
-        return 0.3
+        return _clamp_strict(0.3)
     else:
-        return 0.0
+        return _clamp_strict(0.01)
 
 
 TASK_1 = Task(
@@ -616,7 +622,7 @@ class MLTriageEnvironment(Environment):
         if serialized_state:
             self._restore_state(serialized_state)
 
-        reward_value = 0.0
+        reward_value = _clamp_strict(0.0)
         reward_reason = ""
 
         if self.done:
@@ -635,11 +641,11 @@ class MLTriageEnvironment(Environment):
         valid_action = True
 
         if action.action_type not in ["investigate", "discard", "suggest", "summarize"]:
-            reward_value = -0.05
+            reward_value = _clamp_strict(-0.05)
             reward_reason = f"Invalid action type: {action.action_type}"
             valid_action = False
         elif action.action_type in ["investigate", "discard"] and not action.exp_id:
-            reward_value = -0.05
+            reward_value = _clamp_strict(-0.05)
             reward_reason = f"Missing exp_id for action: {action.action_type}"
             valid_action = False
 
@@ -649,15 +655,15 @@ class MLTriageEnvironment(Environment):
                 if exp:
                     if exp.status == "pending":
                         exp.status = "investigated"
-                        reward_value = 0.1
+                        reward_value = _clamp_strict(0.1)
                         reward_reason = f"Successfully investigated {action.exp_id}. Details: model={exp.model_name}, lr={exp.learning_rate}, val_acc={exp.val_acc}"
                     else:
-                        reward_value = 0.0
+                        reward_value = _clamp_strict(0.0)
                         reward_reason = (
                             f"Warning: {action.exp_id} was already investigated"
                         )
                 else:
-                    reward_value = -0.05
+                    reward_value = _clamp_strict(-0.05)
                     reward_reason = f"Experiment {action.exp_id} not found"
 
             elif action.action_type == "discard":
@@ -666,14 +672,14 @@ class MLTriageEnvironment(Environment):
                     is_overfitting = self._is_overfitting(exp)
                     if is_overfitting:
                         exp.status = "discarded"
-                        reward_value = 0.15
+                        reward_value = _clamp_strict(0.15)
                         reward_reason = f"Correctly discarded {action.exp_id} - overfitting detected"
                     else:
                         exp.status = "discarded"
-                        reward_value = -0.1
+                        reward_value = _clamp_strict(-0.1)
                         reward_reason = f"Incorrectly discarded {action.exp_id} - it was not overfitting"
                 else:
-                    reward_value = -0.05
+                    reward_value = _clamp_strict(-0.05)
                     reward_reason = f"Experiment {action.exp_id} not found"
 
             elif action.action_type == "suggest":
@@ -697,23 +703,23 @@ class MLTriageEnvironment(Environment):
                         correct += 1
 
                     if correct == 3:
-                        reward_value = 0.5
+                        reward_value = _clamp_strict(0.5)
                         reward_reason = (
                             "Excellent suggestion! Matches ground truth exactly."
                         )
                     elif correct == 2:
-                        reward_value = 0.35
+                        reward_value = _clamp_strict(0.35)
                         reward_reason = (
                             "Good suggestion. Partially matches ground truth."
                         )
                     elif correct == 1:
-                        reward_value = 0.15
+                        reward_value = _clamp_strict(0.15)
                         reward_reason = "Partial suggestion. Some fields match."
                     else:
-                        reward_value = 0.0
+                        reward_value = _clamp_strict(0.0)
                         reward_reason = "Suggestion does not match ground truth well."
                 else:
-                    reward_value = -0.05
+                    reward_value = _clamp_strict(-0.05)
                     reward_reason = "Missing suggestion data"
 
             elif action.action_type == "summarize":
@@ -728,7 +734,7 @@ class MLTriageEnvironment(Environment):
                 else:
                     score = self.current_task.grader(None, None, action.suggestion)
 
-                reward_value = score
+                reward_value = _clamp_strict(score)
                 if score >= 1.0:
                     reward_reason = "Perfect! Correctly identified the best experiment."
                 elif score >= 0.5:
@@ -750,7 +756,7 @@ class MLTriageEnvironment(Environment):
 
         if self.current_step >= self.max_steps and not self.done:
             self.done = True
-            reward_value = 0.0
+            reward_value = _clamp_strict(0.0)
             reward_reason = "Max steps reached. Episode ended."
 
         if action.action_type != "summarize" and not self.done:

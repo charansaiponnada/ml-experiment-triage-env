@@ -43,7 +43,7 @@ SUCCESS_SCORE_THRESHOLD = 0.2
 MAX_STEPS = 15
 TEMPERATURE = 0.3
 MAX_TOKENS = 200
-EPSILON = 1e-9
+EPSILON = 0.01
 
 
 def _clamp_strict(value: float) -> float:

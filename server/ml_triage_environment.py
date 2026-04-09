@@ -4,7 +4,7 @@ from openenv_core import Environment
 from pydantic import BaseModel
 import json
 
-EPSILON = 1e-9
+EPSILON = 0.01
 
 
 def _clamp_strict(value: float) -> float:
@@ -892,7 +892,7 @@ class MLTriageEnvironment(Environment):
         if serialized_state:
             self._restore_state(serialized_state)
 
-        reward_value = 0.0
+        reward_value = _clamp_strict(0.0)
         reward_reason = ""
 
         if self.done:
@@ -922,19 +922,19 @@ class MLTriageEnvironment(Environment):
             "compare",
             "diagnose",
         ]:
-            reward_value = -0.05
+            reward_value = _clamp_strict(-0.05)
             reward_reason = f"Invalid action type: {action.action_type}"
             valid_action = False
         elif action.action_type in ["investigate", "discard"] and not action.exp_id:
-            reward_value = -0.05
+            reward_value = _clamp_strict(-0.05)
             reward_reason = f"Missing exp_id for action: {action.action_type}"
             valid_action = False
         elif action.action_type == "compare" and not action.comparison:
-            reward_value = -0.05
+            reward_value = _clamp_strict(-0.05)
             reward_reason = "Missing comparison data"
             valid_action = False
         elif action.action_type == "diagnose" and not action.diagnosis:
-            reward_value = -0.05
+            reward_value = _clamp_strict(-0.05)
             reward_reason = "Missing diagnosis data"
             valid_action = False
 
@@ -944,15 +944,15 @@ class MLTriageEnvironment(Environment):
                 if exp:
                     if exp.status == "pending":
                         exp.status = "investigated"
-                        reward_value = 0.1
+                        reward_value = _clamp_strict(0.1)
                         reward_reason = f"Successfully investigated {action.exp_id}. Details: model={exp.model_name}, lr={exp.learning_rate}, val_acc={exp.val_acc}"
                     else:
-                        reward_value = 0.0
+                        reward_value = _clamp_strict(0.0)
                         reward_reason = (
                             f"Warning: {action.exp_id} was already investigated"
                         )
                 else:
-                    reward_value = -0.05
+                    reward_value = _clamp_strict(-0.05)
                     reward_reason = f"Experiment {action.exp_id} not found"
 
             elif action.action_type == "discard":
@@ -961,14 +961,14 @@ class MLTriageEnvironment(Environment):
                     is_overfitting = self._is_overfitting(exp)
                     if is_overfitting:
                         exp.status = "discarded"
-                        reward_value = 0.15
+                        reward_value = _clamp_strict(0.15)
                         reward_reason = f"Correctly discarded {action.exp_id} - overfitting detected"
                     else:
                         exp.status = "discarded"
-                        reward_value = -0.1
+                        reward_value = _clamp_strict(-0.1)
                         reward_reason = f"Incorrectly discarded {action.exp_id} - it was not overfitting"
                 else:
-                    reward_value = -0.05
+                    reward_value = _clamp_strict(-0.05)
                     reward_reason = f"Experiment {action.exp_id} not found"
 
             elif action.action_type == "suggest":
@@ -992,43 +992,43 @@ class MLTriageEnvironment(Environment):
                         correct += 1
 
                     if correct == 3:
-                        reward_value = 0.5
+                        reward_value = _clamp_strict(0.5)
                         reward_reason = (
                             "Excellent suggestion! Matches ground truth exactly."
                         )
                     elif correct == 2:
-                        reward_value = 0.35
+                        reward_value = _clamp_strict(0.35)
                         reward_reason = (
                             "Good suggestion. Partially matches ground truth."
                         )
                     elif correct == 1:
-                        reward_value = 0.15
+                        reward_value = _clamp_strict(0.15)
                         reward_reason = "Partial suggestion. Some fields match."
                     else:
-                        reward_value = 0.0
+                        reward_value = _clamp_strict(0.0)
                         reward_reason = "Suggestion does not match ground truth well."
                 else:
-                    reward_value = -0.05
+                    reward_value = _clamp_strict(-0.05)
                     reward_reason = "Missing suggestion data"
 
             elif action.action_type == "compare":
                 if action.comparison:
-                    reward_value = 0.15
+                    reward_value = _clamp_strict(0.15)
                     exp_a = action.comparison.get("exp_a", "")
                     exp_b = action.comparison.get("exp_b", "")
                     reward_reason = f"Comparing {exp_a} vs {exp_b}. Analysis noted."
                 else:
-                    reward_value = -0.05
+                    reward_value = _clamp_strict(-0.05)
                     reward_reason = "Missing comparison data"
 
             elif action.action_type == "diagnose":
                 if action.diagnosis:
-                    reward_value = 0.15
+                    reward_value = _clamp_strict(0.15)
                     exp_id = action.diagnosis.get("exp_id", "")
                     reason = action.diagnosis.get("reason", "")
                     reward_reason = f"Diagnosing {exp_id}: {reason[:50]}"
                 else:
-                    reward_value = EPSILON
+                    reward_value = _clamp_strict(EPSILON)
                     reward_reason = "Missing diagnosis data"
 
             elif action.action_type == "summarize":
@@ -1049,7 +1049,7 @@ class MLTriageEnvironment(Environment):
                 else:
                     score = EPSILON
 
-                reward_value = score
+                reward_value = _clamp_strict(score)
                 if score >= 1.0:
                     reward_reason = "Perfect! Correctly identified the best experiment."
                 elif score >= 0.5:

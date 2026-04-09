@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Callable, List, Dict, Any
 from app.models import ExperimentRecord, Action, Reward
 
-EPSILON = 1e-9
+EPSILON = 0.01
 
 
 def _clamp_strict(value: float) -> float:

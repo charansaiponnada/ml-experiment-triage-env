@@ -9,6 +9,13 @@ API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY", "")
 API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
 MODEL_NAME = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-72B-Instruct"
 
+EPSILON = 0.01
+
+
+def _clamp_strict(value: float) -> float:
+    return max(EPSILON, min(1.0 - EPSILON, value))
+
+
 client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
 
 
@@ -53,7 +60,7 @@ class MLExperimentEnv:
         return exp.train_acc > 0.97 and exp.val_acc is not None and exp.val_acc < 0.75
 
     def step(self, action: Action) -> Tuple[Observation, Reward, bool, Dict]:
-        reward_value = 0.05
+        reward_value = _clamp_strict(0.05)
         reward_reason = ""
 
         if self.done:
@@ -65,7 +72,7 @@ class MLExperimentEnv:
                     task_description=self.task_description,
                     feedback=self.feedback,
                 ),
-                Reward(value=0.05, reason="Episode already done"),
+                Reward(value=_clamp_strict(0.05), reason="Episode already done"),
                 True,
                 {},
             )
@@ -80,11 +87,11 @@ class MLExperimentEnv:
             "compare",
             "diagnose",
         ]:
-            reward_value = 0.0
+            reward_value = _clamp_strict(0.0)
             reward_reason = f"Invalid action type: {action.action_type}"
             valid_action = False
         elif action.action_type in ["investigate", "discard"] and not action.exp_id:
-            reward_value = 0.0
+            reward_value = _clamp_strict(0.0)
             reward_reason = f"Missing exp_id for action: {action.action_type}"
             valid_action = False
 
@@ -94,15 +101,15 @@ class MLExperimentEnv:
                 if exp:
                     if exp.status == "pending":
                         exp.status = "investigated"
-                        reward_value = 0.15
+                        reward_value = _clamp_strict(0.15)
                         reward_reason = f"Successfully investigated {action.exp_id}. Details: model={exp.model_name}, lr={exp.learning_rate}, val_acc={exp.val_acc}"
                     else:
-                        reward_value = 0.05
+                        reward_value = _clamp_strict(0.05)
                         reward_reason = (
                             f"Warning: {action.exp_id} was already investigated"
                         )
                 else:
-                    reward_value = 0.0
+                    reward_value = _clamp_strict(0.0)
                     reward_reason = f"Experiment {action.exp_id} not found"
 
             elif action.action_type == "discard":
@@ -111,33 +118,33 @@ class MLExperimentEnv:
                     is_overfitting = self._is_overfitting(exp)
                     if is_overfitting:
                         exp.status = "discarded"
-                        reward_value = 0.25
+                        reward_value = _clamp_strict(0.25)
                         reward_reason = f"Correctly discarded {action.exp_id} - overfitting detected (train_acc={exp.train_acc}, val_acc={exp.val_acc})"
                     else:
                         exp.status = "discarded"
-                        reward_value = 0.05
+                        reward_value = _clamp_strict(0.05)
                         reward_reason = f"Discarded {action.exp_id}"
                 else:
-                    reward_value = 0.0
+                    reward_value = _clamp_strict(0.0)
                     reward_reason = f"Experiment {action.exp_id} not found"
 
             elif action.action_type == "suggest":
-                reward_value = 0.3
+                reward_value = _clamp_strict(0.3)
                 reward_reason = f"Suggestion received: {action.suggestion}"
 
             elif action.action_type == "compare":
-                reward_value = 0.3
+                reward_value = _clamp_strict(0.3)
                 reward_reason = f"Comparison received: {action.comparison}"
 
             elif action.action_type == "diagnose":
-                reward_value = 0.3
+                reward_value = _clamp_strict(0.3)
                 reward_reason = f"Diagnosis received: {action.diagnosis}"
 
             elif action.action_type == "summarize":
                 score = self.current_task.grader(
                     self.experiments, action, self.episode_history
                 )
-                reward_value = score
+                reward_value = _clamp_strict(score)
                 if score >= 0.9:
                     reward_reason = "Perfect! Excellent work."
                 elif score >= 0.5:
@@ -160,7 +167,7 @@ class MLExperimentEnv:
 
         if self.current_step >= self.max_steps and not self.done:
             self.done = True
-            reward_value = 0.1
+            reward_value = _clamp_strict(0.1)
             reward_reason = "Max steps reached. Episode ended."
 
         if action.action_type != "summarize" and not self.done:
